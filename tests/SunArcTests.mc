@@ -80,3 +80,36 @@ function sunEventTextUses24HourTimeAndMissingPlaceholder(logger as Test.Logger) 
     Test.assertEqual(SunArc.eventText(86399), "23:59");
     return true;
 }
+
+(:test)
+function sunIntervalLabelsFollowDayAndNightIncludingMidnight(logger as Test.Logger) as Lang.Boolean {
+    var sunrise = 21600;
+    var sunset = 64800;
+    var times = [0, 18000, 21599, 21600, 43200, 64799, 64800, 75600, 86399];
+    var expectedDaylight = [false, false, false, true, true, true, false, false, false];
+    for (var i = 0; i < times.size(); i += 1) {
+        var daylight = SunArc.isDaylight(times[i], sunrise, sunset);
+        Test.assertEqual(daylight, expectedDaylight[i]);
+        Test.assertEqual(SunArc.intervalStart(daylight, sunrise, sunset), expectedDaylight[i] ? sunrise : sunset);
+        Test.assertEqual(SunArc.intervalEnd(daylight, sunrise, sunset), expectedDaylight[i] ? sunset : sunrise);
+    }
+    Test.assertEqual(SunArc.eventText(SunArc.intervalStart(false, sunrise, sunset)), "18:00");
+    Test.assertEqual(SunArc.eventText(SunArc.intervalEnd(false, sunrise, sunset)), "06:00");
+    Test.assertEqual(SunArc.progress(75600, sunrise, sunset), 0.25);
+    Test.assertEqual(SunArc.progress(18000, sunrise, sunset), 11.0 / 12.0);
+    return true;
+}
+
+(:test)
+function sunIntervalHandlesDaylightAcrossMidnightAndUnknownEvents(logger as Test.Logger) as Lang.Boolean {
+    Test.assertEqual(SunArc.isDaylight(0, 72000, 14400), true);
+    Test.assertEqual(SunArc.isDaylight(14400, 72000, 14400), false);
+    Test.assertEqual(SunArc.intervalStart(false, 72000, 14400), 14400);
+    Test.assertEqual(SunArc.intervalEnd(false, 72000, 14400), 72000);
+    Test.assert(SunArc.isDaylight(43200, null, 64800) == null);
+    Test.assert(SunArc.isDaylight(43200, 21600, null) == null);
+    Test.assert(SunArc.isDaylight(43200, 21600, 21600) == null);
+    Test.assert(SunArc.intervalStart(null, null, null) == null);
+    Test.assert(SunArc.intervalEnd(null, null, null) == null);
+    return true;
+}

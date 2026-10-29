@@ -8,12 +8,16 @@ okrągły ekran MIP 260 × 260 px, minimum API 4.2.2.
 - Godzina 24 h (`HH MM`) pośrodku, bez dwukropka, domyślnie z małymi sekundami po prawej.
 - Na górze szare ikony alarmu i braku połączenia z telefonem, wyśrodkowane
   razem; pojedyncza aktywna ikona zajmuje środek.
-- Wschód słońca po lewej, zachód po prawej, w formacie 24 h.
+- W dzień: wschód po lewej, zachód po prawej. W nocy: ostatni zachód po lewej,
+  następny wschód po prawej, w formacie 24 h.
 - Niżej wspólny wyśrodkowany wiersz: data i bieżąca pogoda, z odstępem 14 px.
   Data ma postać `Cz, 29 Paź`, zgodną z językiem zegarka; temperatura jest w °C.
 - Trzy dolne pola, z wartościami nad ikonami, domyślnie: kroki, dzienne kilokalorie i stres.
 - Dolny łuk pokazuje cel kroków, górny — postęp bieżącego dnia lub nocy.
   Oba zajmują 72° obwodu, mają grubość 4 px i przylegają do krawędzi.
+  Górny łuk wypełnia się od lewego zdarzenia do prawego: w dzień od wschodu
+  do zachodu, w nocy od zachodu do wschodu przez północ. O wschodzie i zachodzie
+  zaczyna nowy odcinek od zera; o północy nie resetuje się.
 
 Temperatura, data i dolne wartości mają wspólną pogrubioną czcionkę o wysokości 26 px.
 Sekundy używają tej samej rodziny czcionki w rozmiarze 25 px.
@@ -189,7 +193,7 @@ Dystans używa gotowego symbolu biegnącej postaci; odczyt pozostaje dzienny.
 Ikony statusu i pogody są rysunkami wektorowymi.
 
 Po refaktoryzacji 2026-10-29: czysta kompilacja SDK 9.3.0 z `-w -l 1` i wszystkie
-29 testów przeszło. W symulatorze sprawdzono zachowanie wyglądu, odświeżanie
+31 testów przeszło. W symulatorze sprawdzono zachowanie wyglądu, odświeżanie
 sekund i minut, zmianę języka polski/angielski, wybór trzech pól i akcentu oraz
 ładowanie oryginalnych ikon, przełączanie prostego widoku i jego zapis po restarcie,
 opcję „Brak” oraz wyśrodkowanie jednego i dwóch pól w obu widokach, a także ukrycie wszystkich pól.

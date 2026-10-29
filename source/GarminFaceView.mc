@@ -37,6 +37,7 @@ class GarminFaceView extends WatchUi.WatchFace {
     private var _values as Lang.Array<Lang.String> = ["--", "--", "--"];
     private var _stepSweep as Lang.Number = -1;
     private var _sunSweep as Lang.Number = -1;
+    private var _sunDaylight as Lang.Boolean or Null = null;
 
     function initialize() { WatchFace.initialize(); }
 
@@ -112,17 +113,21 @@ class GarminFaceView extends WatchUi.WatchFace {
         }
         var stepProgress = null;
         var sunProgress = null;
+        var sunDaylight = null;
         if (!simple) {
             if (activity != null && activity.steps != null && activity.stepGoal != null && activity.stepGoal > 0) {
                 stepProgress = activity.steps.toFloat() / activity.stepGoal;
             }
             SunArc.refresh(stamp);
-            sunProgress = SunArc.currentProgress(clock.hour * 3600 + clock.min * 60 + clock.sec);
+            var secondsToday = clock.hour * 3600 + clock.min * 60 + clock.sec;
+            sunProgress = SunArc.currentProgress(secondsToday);
+            sunDaylight = SunArc.currentDaylight(secondsToday);
             var stepSweep = ProgressArc.sweep(stepProgress);
             var sunSweep = ProgressArc.sweep(sunProgress);
-            if (_stepSweep != stepSweep || _sunSweep != sunSweep) { dirty = true; }
+            if (_stepSweep != stepSweep || _sunSweep != sunSweep || _sunDaylight != sunDaylight) { dirty = true; }
             _stepSweep = stepSweep;
             _sunSweep = sunSweep;
+            _sunDaylight = sunDaylight;
         }
         if (_hour != clock.hour || _minute != clock.min) { dirty = true; }
         if (dirty) {
@@ -134,7 +139,7 @@ class GarminFaceView extends WatchUi.WatchFace {
             target.clearClip();
             target.setColor(_secondary, _background);
             target.clear();
-            if (!simple) { SunArc.draw(target, sunProgress); }
+            if (!simple) { SunArc.draw(target, sunProgress, sunDaylight); }
             WeatherRow.draw(target, FaceLayout.CENTER_X, FaceLayout.DATE_Y, _dateText);
             drawStatus(target);
             drawClock(target, clock);
