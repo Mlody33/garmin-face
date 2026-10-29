@@ -1,0 +1,10 @@
+<drawables>
+    <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
+    <bitmap id="StepsIcon" filename="garmin/steps.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>
+    <bitmap id="CaloriesIcon" filename="garmin/calories.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>
+    <bitmap id="StressIcon" filename="garmin/stress.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>
+    <bitmap id="HeartRateIcon" filename="garmin/heart_rate.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>
+    <bitmap id="BatteryIcon" filename="garmin/battery.svg" dithering="none"/>
+    <bitmap id="DistanceIcon" filename="garmin/distance.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>
+    <bitmap id="FloorsIcon" filename="garmin/floors.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>
+</drawables>

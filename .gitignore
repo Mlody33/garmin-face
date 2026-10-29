@@ -1,0 +1,13 @@
+# Build output and local development tools
+bin/
+.tools/
+work/
+
+# Private signing keys must never be committed.
+.keys/
+*.der
+*.pem
+
+# Machine-specific settings
+.vscode/settings.json
+.DS_Store

@@ -1,0 +1,24 @@
+<strings>
+    <string id="AppName">Garmin Face</string>
+    <string id="BatteryLabel">Bateria</string>
+    <string id="StepsLabel">Kroki</string>
+    <string id="CaloriesLabel">Kalorie</string>
+    <string id="StressLabel">Stres</string>
+    <string id="HeartRateLabel">Tętno</string>
+    <string id="DistanceLabel">Dystans (km)</string>
+    <string id="FloorsLabel">Pokonane piętra</string>
+    <string id="LeftFieldLabel">Lewe pole</string>
+    <string id="CenterFieldLabel">Środkowe pole</string>
+    <string id="RightFieldLabel">Prawe pole</string>
+    <string id="CustomizeTitle">Dostosuj</string>
+    <string id="AccentColorLabel">Kolor akcentu</string>
+    <string id="WhiteColor">Biały</string>
+    <string id="GrayColor">Szary</string>
+    <string id="RedColor">Czerwony</string>
+    <string id="OrangeColor">Pomarańczowy</string>
+    <string id="YellowColor">Żółty</string>
+    <string id="GreenColor">Zielony</string>
+    <string id="BlueColor">Niebieski</string>
+    <string id="PurpleColor">Fioletowy</string>
+    <string id="PinkColor">Różowy</string>
+</strings>
