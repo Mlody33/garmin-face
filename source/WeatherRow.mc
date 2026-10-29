@@ -1,6 +1,7 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
+import Toybox.Position;
 import Toybox.Weather;
 
 // Current temperature and conditions from Garmin's cached weather.
@@ -12,6 +13,7 @@ module WeatherRow {
     var _stamp as Lang.Number = -1;
     var _condition as Lang.Number or Null = null;
     var _currentTemperature as Lang.String = "--°";
+    var _location as Position.Location or Null = null;
 
     function invalidate() as Void { _stamp = -1; }
 
@@ -21,7 +23,10 @@ module WeatherRow {
         var conditions = Weather.getCurrentConditions();
         _currentTemperature = conditions == null ? "--°" : temperatureText(conditions.temperature);
         _condition = conditions == null ? null : conditions.condition;
+        _location = conditions == null ? null : conditions.observationLocationPosition;
     }
+
+    function location() as Position.Location or Null { return _location; }
 
     function draw(dc as Graphics.Dc, centerX as Lang.Number, y as Lang.Number,
                   dateText as Lang.String) as Void {

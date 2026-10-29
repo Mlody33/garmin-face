@@ -3,6 +3,12 @@
 Profil: Forerunner 955 / Solar, Connect IQ SDK 9.3.0, API urządzenia 5.2.0.
 Punkt odniesienia: tag `1.1`, commit `caaa367`. Zachowano wygląd i ustawienia.
 
+Ten raport opisuje optymalizację wydaną jako `1.2`. Późniejsza poprawka godzin
+słonecznych zastępuje odczyt pól `SUNRISE`/`SUNSET` obliczeniami `Weather.getSunrise`
+i `Weather.getSunset` dla konkretnych dat. Dodaje pasywny odczyt zapisanej pozycji
+i uprawnienie `Positioning`, bez uruchamiania GPS ani połączenia sieciowego.
+Obliczenia są buforowane według dnia i pozycji; opis bieżącej logiki jest w README.
+
 ## Co zmieniono
 
 - Gotowy ekran bez sekundnika jest przechowywany w `BufferedBitmap`. Powstaje ponownie po zmianie wyświetlanej wartości, konfiguracji, alarmu, połączenia, daty/języka, minuty lub widocznego stopnia wypełnienia łuku. Przy niezmiennych danych pełne wywołanie `onUpdate` kopiuje gotowy ekran i dodaje sekundy.

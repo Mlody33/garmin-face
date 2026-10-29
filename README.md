@@ -82,9 +82,19 @@ w lokalnych próbach symulator nie przekazywał gestu przytrzymania do tarczy.
 
 Pogoda pochodzi z `Weather.getCurrentConditions()` i wymaga aktualnych danych
 Garmin Connect. Bez danych widoczna jest temperatura `--°` i kreska zamiast ikony.
-Wschód i zachód pochodzą z natywnych pól `SUNRISE` i `SUNSET`; tarcza nie uruchamia
-GPS ani nie czyta lokalizacji. Tętno również pochodzi z natywnego pola zegarka,
-bez osobnej sesji czujnika. Jedynym uprawnieniem jest `ComplicationSubscriber`.
+Wschód i zachód są obliczane przez `Weather.getSunrise()` i `Weather.getSunset()`
+dla konkretnych dat i ostatniej dostępnej pozycji. Zdarzenia mają pełne znaczniki
+czasu: po zachodzie pasek łączy dzisiejszy zachód z jutrzejszym wschodem;
+przed wschodem — wczorajszy zachód z dzisiejszym wschodem. Długość nocy wynika
+z różnicy tych znaczników, także podczas zmiany czasu i przejścia roku.
+
+Tarcza odczytuje istniejącą pozycję przez `Position.getInfo()`, a gdy jej brak,
+korzysta z pozycji zapisanej w danych pogody lub ostatniej poprawnej pozycji
+zachowanej lokalnie. Wymagane jest uprawnienie `Positioning`. GPS i zdarzenia
+lokalizacyjne nie są uruchamiane; współrzędne nie są wysyłane. Bez pozycji lub
+pełnego przedziału zdarzeń wyświetlane jest `--:--` i pusty łuk.
+Tętno pochodzi z natywnego pola zegarka, bez osobnej sesji czujnika;
+pozostaje uprawnienie `ComplicationSubscriber`.
 
 Ikona alarmu zależy od `alarmCount > 0`, a braku połączenia od `!phoneConnected`.
 Licznik powiadomień nie jest wyświetlany.
@@ -101,7 +111,9 @@ wyświetlanych danych, ustawień, statusu, minuty lub stopnia wypełnienia łuku
 Każde `onUpdate()` nadal odtwarza cały ekran, również po powiadomieniach i menu.
 Ikony Garmina są ładowane dopiero przy pierwszym użyciu. Aktualne pomiary i stan
 połączenia nadal są sprawdzane przy pełnym odświeżeniu; powtarzane pola współdzielą odczyt.
-Pogoda i godziny słoneczne są odczytywane raz na minutę oraz po powrocie do tarczy.
+Pogoda i dostępna zapisana pozycja są sprawdzane raz na minutę oraz po powrocie
+do tarczy. Zdarzenia słoneczne są buforowane dla okolicznych dat i obliczane
+ponownie po zmianie lokalnego dnia lub pozycji (z dokładnością ok. 0,001°).
 Ukryte wszystkie pola w prostym widoku nie powodują odczytu aktywności.
 
 Cyfry sekund są rasteryzowane raz po zmianie tła. Kropka korzysta z gotowych
@@ -177,6 +189,8 @@ potrzebna do testów na własnym zegarku.
 | `source/DigitalSeconds.mc` | Bufor cyfr sekund i ich częściowe odświeżanie |
 | `source/ProgressArc.mc` | Wspólne rysowanie i ograniczanie wypełnienia łuków |
 | `source/SunArc.mc` | Wschód, zachód i postęp dnia/nocy |
+| `source/SolarTimes.mc` | Datowane zdarzenia słoneczne i dokładny przedział dnia/nocy |
+| `source/SolarPosition.mc` | Odczyt i lokalne zachowanie istniejącej pozycji bez uruchamiania GPS |
 | `source/WeatherRow.mc` | Wyśrodkowany wiersz daty i pogody |
 | `source/MetricFields.mc` | Odczyt danych, formatowanie i zapis wyborów |
 | `source/MetricNavigation.mc` | Przytrzymanie pól i natywne skróty |
@@ -193,7 +207,7 @@ Dystans używa gotowego symbolu biegnącej postaci; odczyt pozostaje dzienny.
 Ikony statusu i pogody są rysunkami wektorowymi.
 
 Po refaktoryzacji 2026-10-29: czysta kompilacja SDK 9.3.0 z `-w -l 1` i wszystkie
-31 testów przeszło. W symulatorze sprawdzono zachowanie wyglądu, odświeżanie
+30 testów przeszło. W symulatorze sprawdzono zachowanie wyglądu, odświeżanie
 sekund i minut, zmianę języka polski/angielski, wybór trzech pól i akcentu oraz
 ładowanie oryginalnych ikon, przełączanie prostego widoku i jego zapis po restarcie,
 opcję „Brak” oraz wyśrodkowanie jednego i dwóch pól w obu widokach, a także ukrycie wszystkich pól.

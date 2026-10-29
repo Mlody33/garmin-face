@@ -118,10 +118,9 @@ class GarminFaceView extends WatchUi.WatchFace {
             if (activity != null && activity.steps != null && activity.stepGoal != null && activity.stepGoal > 0) {
                 stepProgress = activity.steps.toFloat() / activity.stepGoal;
             }
-            SunArc.refresh(stamp);
-            var secondsToday = clock.hour * 3600 + clock.min * 60 + clock.sec;
-            sunProgress = SunArc.currentProgress(secondsToday);
-            sunDaylight = SunArc.currentDaylight(secondsToday);
+            SunArc.refresh(now);
+            sunProgress = SunArc.currentProgress(now.value());
+            sunDaylight = SunArc.currentDaylight();
             var stepSweep = ProgressArc.sweep(stepProgress);
             var sunSweep = ProgressArc.sweep(sunProgress);
             if (_stepSweep != stepSweep || _sunSweep != sunSweep || _sunDaylight != sunDaylight) { dirty = true; }
@@ -139,7 +138,7 @@ class GarminFaceView extends WatchUi.WatchFace {
             target.clearClip();
             target.setColor(_secondary, _background);
             target.clear();
-            if (!simple) { SunArc.draw(target, sunProgress, sunDaylight); }
+            if (!simple) { SunArc.draw(target, sunProgress); }
             WeatherRow.draw(target, FaceLayout.CENTER_X, FaceLayout.DATE_Y, _dateText);
             drawStatus(target);
             drawClock(target, clock);
