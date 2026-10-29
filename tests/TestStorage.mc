@@ -11,5 +11,6 @@ module TestStorage {
         }
         MetricFields.load();
         FaceColors.load();
+        FaceOptions.load();
     }
 }

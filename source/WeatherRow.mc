@@ -30,7 +30,7 @@ module WeatherRow {
         }
         var gap = 14;
         var rowLeft = centerX - (_dateWidth + gap + 24 + _temperatureWidth) / 2;
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+        dc.setColor(FaceColors.secondary(), FaceColors.background());
         dc.drawText(rowLeft, y, font, dateText,
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
         var left = rowLeft + _dateWidth + gap;

@@ -7,11 +7,17 @@
     <string id="HeartRateLabel">Tętno</string>
     <string id="DistanceLabel">Dystans (km)</string>
     <string id="FloorsLabel">Pokonane piętra</string>
+    <string id="NoneLabel">Brak</string>
     <string id="LeftFieldLabel">Lewe pole</string>
     <string id="CenterFieldLabel">Środkowe pole</string>
     <string id="RightFieldLabel">Prawe pole</string>
     <string id="CustomizeTitle">Dostosuj</string>
     <string id="AccentColorLabel">Kolor akcentu</string>
+    <string id="SimpleViewLabel">Prosty widok</string>
+    <string id="LightBackgroundLabel">Jasne tło</string>
+    <string id="AnalogSecondsLabel">Analogowy sekundnik</string>
+    <string id="EnabledLabel">Włączony</string>
+    <string id="DisabledLabel">Wyłączony</string>
     <string id="WhiteColor">Biały</string>
     <string id="GrayColor">Szary</string>
     <string id="RedColor">Czerwony</string>

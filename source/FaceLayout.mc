@@ -4,16 +4,19 @@ import Toybox.Lang;
 module FaceLayout {
     const STATUS_Y = 23;
     const SUN_Y = 50;
-    const DATE_Y = 81;
+    const CENTER_X = 130;
+    const CENTER_Y = 130;
+    const DATA_ROW_GAP = 52;
+    const DATE_Y = CENTER_Y - DATA_ROW_GAP;
     const FIELD_COUNT = 3;
-    const FIELD_FIRST_X = 60;
     const FIELD_SPACING = 70;
-    const FIELD_ICON_Y = 182;
-    const FIELD_VALUE_Y = 210;
+    const FIELD_VALUE_Y = CENTER_Y + DATA_ROW_GAP;
+    const FIELD_ICON_Y = 210;
     const FIELD_TOUCH_TOP = 166;
     const FIELD_TOUCH_BOTTOM = 228;
 
-    function fieldX(slot as Lang.Number) as Lang.Number {
-        return FIELD_FIRST_X + slot * FIELD_SPACING;
+    function fieldX(index as Lang.Number, visibleCount as Lang.Number) as Lang.Number {
+        return CENTER_X + (2 * index - visibleCount + 1) * FIELD_SPACING / 2;
     }
+
 }

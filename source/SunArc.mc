@@ -27,11 +27,11 @@ module SunArc {
             _font = Graphics.getVectorFont({:face => "RobotoCondensedRegular", :size => 21});
             if (_font == null) { _font = Graphics.FONT_XTINY; }
         }
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+        dc.setColor(FaceColors.secondary(), FaceColors.background());
         var font = _font as Graphics.FontType;
-        dc.drawText(FaceLayout.fieldX(0), FaceLayout.SUN_Y, font, _sunriseText,
+        dc.drawText(FaceLayout.fieldX(0, FaceLayout.FIELD_COUNT), FaceLayout.SUN_Y, font, _sunriseText,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.drawText(FaceLayout.fieldX(2), FaceLayout.SUN_Y, font, _sunsetText,
+        dc.drawText(FaceLayout.fieldX(2, FaceLayout.FIELD_COUNT), FaceLayout.SUN_Y, font, _sunsetText,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 

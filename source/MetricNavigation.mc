@@ -4,13 +4,15 @@ import Toybox.System;
 import Toybox.WatchUi;
 
 module MetricNavigation {
-    function slotAt(x as Lang.Number, y as Lang.Number) as Lang.Number or Null {
-        // FR955: 70 px columns centered at 60/130/200, covering icons and values.
+    function slotAt(x as Lang.Number, y as Lang.Number,
+                    slots as Lang.Array<Lang.Number>) as Lang.Number or Null {
+        // Use the same visible columns as rendering, covering icons and values.
         // Leave the time, date and the goal arc outside the press targets.
-        var left = FaceLayout.FIELD_FIRST_X - FaceLayout.FIELD_SPACING / 2;
-        if (x < left || x >= left + FaceLayout.FIELD_COUNT * FaceLayout.FIELD_SPACING
+        if (slots.size() == 0) { return null; }
+        var left = FaceLayout.fieldX(0, slots.size()) - FaceLayout.FIELD_SPACING / 2;
+        if (x < left || x >= left + slots.size() * FaceLayout.FIELD_SPACING
             || y < FaceLayout.FIELD_TOUCH_TOP || y > FaceLayout.FIELD_TOUCH_BOTTOM) { return null; }
-        return (x - left) / FaceLayout.FIELD_SPACING;
+        return slots[(x - left) / FaceLayout.FIELD_SPACING];
     }
 
     function complicationType(metric as Lang.String) as Complications.Type or Null {
@@ -35,7 +37,7 @@ class GarminFaceDelegate extends WatchUi.WatchFaceDelegate {
 
     function onPress(event as WatchUi.ClickEvent) as Lang.Boolean {
         var point = event.getCoordinates();
-        var slot = MetricNavigation.slotAt(point[0], point[1]);
+        var slot = MetricNavigation.slotAt(point[0], point[1], MetricFields.visibleSlots());
         if (slot == null) { return false; }
         var type = MetricNavigation.complicationType(MetricFields.get(slot));
         if (type == null) { return false; }

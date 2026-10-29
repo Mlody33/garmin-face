@@ -13,12 +13,14 @@ module MetricFields {
     const BATTERY = "battery";
     const DISTANCE = "distance";
     const FLOORS = "floors";
+    const NONE = "none";
 
     var _fields as Lang.Array<Lang.String> = [STEPS, CALORIES, STRESS];
+    var _visibleSlots as Lang.Array<Lang.Number> = [0, 1, 2];
     var _heartRateId as Complications.Id or Null = null;
 
     function choices() as Lang.Array<Lang.String> {
-        return [STEPS, CALORIES, STRESS, HEART_RATE, BATTERY, DISTANCE, FLOORS];
+        return [STEPS, CALORIES, STRESS, HEART_RATE, BATTERY, DISTANCE, FLOORS, NONE];
     }
 
     function key(slot as Lang.Number) as Lang.String {
@@ -40,6 +42,7 @@ module MetricFields {
             var stored = Storage.getValue(key(slot));
             _fields[slot] = isValid(stored) ? stored as Lang.String : defaults[slot];
         }
+        updateVisibleSlots();
     }
 
     function get(slot as Lang.Number) as Lang.String {
@@ -50,12 +53,25 @@ module MetricFields {
         if (slot < 0 || slot >= FaceLayout.FIELD_COUNT || !isValid(metric)) { return false; }
         Storage.setValue(key(slot), metric);
         _fields[slot] = metric;
+        updateVisibleSlots();
         return true;
+    }
+
+    function visibleSlots() as Lang.Array<Lang.Number> {
+        return _visibleSlots;
+    }
+
+    function updateVisibleSlots() as Void {
+        _visibleSlots = [];
+        for (var slot = 0; slot < FaceLayout.FIELD_COUNT; slot += 1) {
+            if (!_fields[slot].equals(NONE)) { _visibleSlots.add(slot); }
+        }
     }
 
     function label(metric as Lang.String) as Lang.String {
         var resource = Rez.Strings.StepsLabel;
         switch (metric) {
+            case NONE: resource = Rez.Strings.NoneLabel; break;
             case CALORIES: resource = Rez.Strings.CaloriesLabel; break;
             case STRESS: resource = Rez.Strings.StressLabel; break;
             case HEART_RATE: resource = Rez.Strings.HeartRateLabel; break;

@@ -39,7 +39,33 @@ module FaceColors {
     }
 
     function getDisplayColor() as Lang.Number {
+        if (FaceOptions.lightBackground()) {
+            // Keep the chosen hue readable on white, including a white accent.
+            switch (_color) {
+                case Graphics.COLOR_WHITE: return Graphics.COLOR_BLACK;
+                case Graphics.COLOR_LT_GRAY: return Graphics.COLOR_DK_GRAY;
+                case Graphics.COLOR_RED: return 0xAA0000;
+                case Graphics.COLOR_ORANGE: return 0xAA5500;
+                case Graphics.COLOR_YELLOW: return 0x555500;
+                case Graphics.COLOR_GREEN: return 0x005500;
+                case Graphics.COLOR_BLUE: return 0x0055AA;
+                case Graphics.COLOR_PURPLE: return 0x5500AA;
+                case Graphics.COLOR_PINK: return 0xAA0055;
+            }
+        }
         return _displayColor;
+    }
+
+    function background() as Lang.Number {
+        return FaceOptions.lightBackground() ? Graphics.COLOR_WHITE : Graphics.COLOR_BLACK;
+    }
+
+    function secondary() as Lang.Number {
+        return FaceOptions.lightBackground() ? Graphics.COLOR_DK_GRAY : Graphics.COLOR_LT_GRAY;
+    }
+
+    function track() as Lang.Number {
+        return FaceOptions.lightBackground() ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_DK_GRAY;
     }
 
     function displayColor(color as Lang.Number) as Lang.Number {

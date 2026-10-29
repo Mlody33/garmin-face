@@ -15,7 +15,13 @@ module DataIcons {
             icon = WatchUi.loadResource(resource) as WatchUi.BitmapResource;
             _icons[metric] = icon;
         }
-        dc.drawBitmap(x - icon.getWidth() / 2, y - icon.getHeight() / 2, icon);
+        var left = x - icon.getWidth() / 2;
+        var top = y - icon.getHeight() / 2;
+        if (FaceOptions.lightBackground()) {
+            dc.drawBitmap2(left, top, icon, {:tintColor => FaceColors.secondary()});
+        } else {
+            dc.drawBitmap(left, top, icon);
+        }
     }
 
     function resourceFor(metric as Lang.String) as Lang.ResourceId or Null {
@@ -39,10 +45,10 @@ module DataIcons {
         dc.drawLine(x - 5, y - 5, x + 6, y + 3);
         dc.drawLine(x + 6, y + 3, x, y + 8);
         dc.setPenWidth(3);
-        dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_BLACK);
+        dc.setColor(FaceColors.background(), FaceColors.background());
         dc.drawLine(x - 7, y - 8, x + 7, y + 8);
         dc.setPenWidth(1);
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_BLACK);
+        dc.setColor(FaceColors.secondary(), FaceColors.background());
         dc.drawLine(x - 7, y - 8, x + 7, y + 8);
     }
 

@@ -7,11 +7,17 @@
     <string id="HeartRateLabel">Heart rate</string>
     <string id="DistanceLabel">Distance (km)</string>
     <string id="FloorsLabel">Floors climbed</string>
+    <string id="NoneLabel">None</string>
     <string id="LeftFieldLabel">Left field</string>
     <string id="CenterFieldLabel">Centre field</string>
     <string id="RightFieldLabel">Right field</string>
     <string id="CustomizeTitle">Customize</string>
     <string id="AccentColorLabel">Accent color</string>
+    <string id="SimpleViewLabel">Simple view</string>
+    <string id="LightBackgroundLabel">Light background</string>
+    <string id="AnalogSecondsLabel">Analog seconds</string>
+    <string id="EnabledLabel">On</string>
+    <string id="DisabledLabel">Off</string>
     <string id="WhiteColor">White</string>
     <string id="GrayColor">Gray</string>
     <string id="RedColor">Red</string>
