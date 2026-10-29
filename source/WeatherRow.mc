@@ -9,15 +9,23 @@ module WeatherRow {
     var _temperatureText as Lang.String = "";
     var _dateWidth as Lang.Number = 0;
     var _temperatureWidth as Lang.Number = 0;
+    var _stamp as Lang.Number = -1;
+    var _condition as Lang.Number or Null = null;
+    var _currentTemperature as Lang.String = "--°";
+
+    function invalidate() as Void { _stamp = -1; }
+
+    function refresh(stamp as Lang.Number) as Void {
+        if (_stamp == stamp) { return; }
+        _stamp = stamp;
+        var conditions = Weather.getCurrentConditions();
+        _currentTemperature = conditions == null ? "--°" : temperatureText(conditions.temperature);
+        _condition = conditions == null ? null : conditions.condition;
+    }
+
     function draw(dc as Graphics.Dc, centerX as Lang.Number, y as Lang.Number,
                   dateText as Lang.String) as Void {
-        var conditions = Weather.getCurrentConditions();
-        var text = "--°";
-        var condition = null;
-        if (conditions != null) {
-            text = temperatureText(conditions.temperature);
-            condition = conditions.condition;
-        }
+        var text = _currentTemperature;
 
         var font = FaceFonts.text();
         if (!text.equals(_temperatureText)) {
@@ -34,7 +42,7 @@ module WeatherRow {
         dc.drawText(rowLeft, y, font, dateText,
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
         var left = rowLeft + _dateWidth + gap;
-        drawIcon(dc, left + 8, y, condition);
+        drawIcon(dc, left + 8, y, _condition);
         dc.drawText(left + 24, y, font, text,
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }

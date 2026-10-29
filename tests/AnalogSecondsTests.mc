@@ -1,4 +1,5 @@
 import Toybox.Lang;
+import Toybox.Graphics;
 import Toybox.Test;
 
 (:test)
@@ -26,6 +27,33 @@ function analogPointerRunsClockwiseOutsideWatchFaceContent(logger as Test.Logger
                 // Stay inside the arcs' inner radius (126 px) at every second.
                 Test.assert(distanceSquared < 126 * 126);
                 Test.assert(distanceSquared >= 118 * 118);
+            }
+        }
+    }
+    return true;
+}
+
+(:test)
+function analogClipsCoverBothPositionsIncludingMinuteWrapAndSkippedTicks(logger as Test.Logger) as Lang.Boolean {
+    AnalogSeconds.prepare(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
+    for (var second = 0; second < 60; second += 1) {
+        for (var skipped = 0; skipped < 3; skipped += 1) {
+            var previous = skipped == 0 ? -1 : (second + 60 - skipped) % 60;
+            var clip = AnalogSeconds.bounds(second, previous);
+            var old = previous < 0 ? second : previous;
+            var currentPoint = AnalogSeconds.marker(second);
+            var oldPoint = AnalogSeconds.marker(old);
+            for (var index = 0; index < 2; index += 1) {
+                var point = index == 0 ? currentPoint : oldPoint;
+                Test.assert(clip[0] <= point[0] - AnalogSeconds.RADIUS);
+                Test.assert(clip[1] <= point[1] - AnalogSeconds.RADIUS);
+                Test.assert(clip[0] + clip[2] > point[0] + AnalogSeconds.RADIUS);
+                Test.assert(clip[1] + clip[3] > point[1] + AnalogSeconds.RADIUS);
+            }
+            Test.assert(clip[0] >= 0 && clip[1] >= 0);
+            Test.assert(clip[0] + clip[2] <= 260 && clip[1] + clip[3] <= 260);
+            if (skipped == 1) {
+                Test.assert(clip[2] <= 20 && clip[3] <= 20);
             }
         }
     }

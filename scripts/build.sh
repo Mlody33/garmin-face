@@ -49,5 +49,6 @@ if [[ ! -f "$key_path" ]]; then
 fi
 
 mkdir -p bin
-"$compiler" -f monkey.jungle -d fr955 -o "$output" -y "$key_path" "$@"
+"$compiler" -f monkey.jungle -d fr955 -o "$output" -y "$key_path" \
+    -O "${CIQ_OPTIMIZATION:-3p}" "$@"
 printf '%s\n' "Gotowe: $PROJECT_ROOT/$output"

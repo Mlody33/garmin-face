@@ -92,8 +92,19 @@ Nie ma timerów ani usług w tle.
 
 Kod przechowuje wynik pomiaru godziny do zmiany minuty, datę do zmiany dnia lub
 języka, szerokości tekstów do ich zmiany oraz ostatnie napisy wschodu i zachodu.
+Gotowy ekran bez sekundnika jest buforowany i składany ponownie dopiero po zmianie
+wyświetlanych danych, ustawień, statusu, minuty lub stopnia wypełnienia łuku.
+Każde `onUpdate()` nadal odtwarza cały ekran, również po powiadomieniach i menu.
 Ikony Garmina są ładowane dopiero przy pierwszym użyciu. Aktualne pomiary i stan
-połączenia nadal są pobierane przy pełnym odświeżeniu.
+połączenia nadal są sprawdzane przy pełnym odświeżeniu; powtarzane pola współdzielą odczyt.
+Pogoda i godziny słoneczne są odczytywane raz na minutę oraz po powrocie do tarczy.
+Ukryte wszystkie pola w prostym widoku nie powodują odczytu aktywności.
+
+Cyfry sekund są rasteryzowane raz po zmianie tła. Kropka korzysta z gotowych
+współrzędnych i małych obszarów odświeżania, również przy przejściu 59 → 00.
+Zwykłe częściowe odświeżanie nie tworzy napisów, tablic ani fontów i nie pobiera danych.
+Kropka odtwarza piksele z bufora pod poprzednią pozycją, zamiast wymazywać ewentualną ikonę.
+Raport porównawczy i zakres pomiarów: [docs/power-audit.md](docs/power-audit.md).
 
 ## Uruchomienie projektu
 
@@ -118,6 +129,8 @@ bash scripts/build.sh -w -l 1
 Wynik: `bin/GarminFace.prg`. W VS Code to samo zadanie uruchamia **Cmd+Shift+B**.
 Dla wersji release dodaj `-r`. Skrypt wykrywa aktywne SDK lub `monkeyc` z PATH.
 Ścieżki można nadpisać zmiennymi `CIQ_SDK_HOME` i `CIQ_DEVELOPER_KEY`.
+Domyślnie stosowana jest optymalizacja wydajności `-O 3p`; można ją zmienić przez
+`CIQ_OPTIMIZATION` (np. `CIQ_OPTIMIZATION=0 bash scripts/build.sh`).
 
 ```sh
 bash scripts/build.sh --tests -w -l 1
@@ -157,6 +170,7 @@ potrzebna do testów na własnym zegarku.
 | `source/FaceLayout.mc` | Współrzędne pól, wierszy i obszarów dotyku |
 | `source/FaceFonts.mc` | Pogrubiona czcionka danych i regularne sekundy |
 | `source/AnalogSeconds.mc` | Wskaźnik sekund przy krawędzi i odświeżanie jego pozycji |
+| `source/DigitalSeconds.mc` | Bufor cyfr sekund i ich częściowe odświeżanie |
 | `source/ProgressArc.mc` | Wspólne rysowanie i ograniczanie wypełnienia łuków |
 | `source/SunArc.mc` | Wschód, zachód i postęp dnia/nocy |
 | `source/WeatherRow.mc` | Wyśrodkowany wiersz daty i pogody |
@@ -175,7 +189,7 @@ Dystans używa gotowego symbolu biegnącej postaci; odczyt pozostaje dzienny.
 Ikony statusu i pogody są rysunkami wektorowymi.
 
 Po refaktoryzacji 2026-10-29: czysta kompilacja SDK 9.3.0 z `-w -l 1` i wszystkie
-26 testów przeszło. W symulatorze sprawdzono zachowanie wyglądu, odświeżanie
+29 testów przeszło. W symulatorze sprawdzono zachowanie wyglądu, odświeżanie
 sekund i minut, zmianę języka polski/angielski, wybór trzech pól i akcentu oraz
 ładowanie oryginalnych ikon, przełączanie prostego widoku i jego zapis po restarcie,
 opcję „Brak” oraz wyśrodkowanie jednego i dwóch pól w obu widokach, a także ukrycie wszystkich pól.

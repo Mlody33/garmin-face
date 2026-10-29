@@ -10,8 +10,13 @@ module SunArc {
     var _sunset as Lang.Number or Null = null;
     var _sunriseText as Lang.String = "--:--";
     var _sunsetText as Lang.String = "--:--";
+    var _stamp as Lang.Number = -1;
 
-    function draw(dc as Graphics.Dc, secondsToday as Lang.Number) as Void {
+    function invalidate() as Void { _stamp = -1; }
+
+    function refresh(stamp as Lang.Number) as Void {
+        if (_stamp == stamp) { return; }
+        _stamp = stamp;
         var sunrise = readEvent(_sunriseId);
         var sunset = readEvent(_sunsetId);
         if (sunrise != _sunrise) {
@@ -22,7 +27,14 @@ module SunArc {
             _sunset = sunset;
             _sunsetText = eventText(sunset);
         }
-        ProgressArc.draw(dc, 126, Graphics.ARC_CLOCKWISE, progress(secondsToday, sunrise, sunset));
+    }
+
+    function currentProgress(secondsToday as Lang.Number) as Lang.Float or Null {
+        return progress(secondsToday, _sunrise, _sunset);
+    }
+
+    function draw(dc as Graphics.Dc, sunProgress as Lang.Float or Null) as Void {
+        ProgressArc.draw(dc, 126, Graphics.ARC_CLOCKWISE, sunProgress);
         if (_font == null) {
             _font = Graphics.getVectorFont({:face => "RobotoCondensedRegular", :size => 21});
             if (_font == null) { _font = Graphics.FONT_XTINY; }
