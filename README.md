@@ -183,12 +183,63 @@ W symulatorze:
 ## Wgranie na FR955
 
 1. Podłącz zegarek kablem USB obsługującym dane.
-2. Skopiuj `bin/GarminFace.prg` do `GARMIN/APPS` w pamięci zegarka.
+2. Wgraj `bin/GarminFace.prg` do `GARMIN/Apps` przez `libmtp`, zgodnie z procedurą poniżej.
 3. Odłącz zegarek i wybierz **Garmin Face** w menu tarcz.
 
-Na macOS FR955 korzysta z MTP. Można użyć [OpenMTP](https://openmtp.ganeshrvel.com/);
-zamknij Garmin Express, jeśli blokuje połączenie. Publikacja w sklepie nie jest
-potrzebna do testów na własnym zegarku.
+Na macOS FR955 korzysta z MTP. Do wykrywania zegarka, odczytu folderów i transferu
+używaj wyłącznie `libmtp` z terminala lub bezpośrednio przez API biblioteki.
+Nie używaj OpenMTP ani aplikacji graficznych do deployu. Publikacja w sklepie
+nie jest potrzebna do testów na własnym zegarku.
+
+### Procedura deployu
+
+Gdy użytkownik prosi o **deploy**, wykonaj całą procedurę:
+
+1. Sprawdź stan repozytorium i zakres zmian przeznaczonych do wdrożenia.
+   Zachowaj niezwiązane zmiany i nie dodawaj ich do commita.
+2. Podbij `version` aplikacji w `manifest.xml`. Domyślnie zwiększ numer patch
+   (np. `0.1.0` → `0.1.1`), chyba że użytkownik wskazał konkretną wersję.
+3. Zbuduj wersję release dla `fr955`: `bash scripts/build.sh -r -w -l 1`.
+   Wykonaj odpowiednie sprawdzenia; przy błędzie przerwij deploy.
+4. Zrób commit zmian wdrożenia wraz z podbitą wersją, np.
+   `Release 0.1.1`. Deploy sam w sobie nie obejmuje pushowania ani tworzenia taga.
+5. Wgraj na podłączony zegarek **plik `.prg` wskazany przez użytkownika**.
+   Jeśli nie wskazano innego pliku, użyj świeżo zbudowanego `bin/GarminFace.prg`.
+   Nie wgrywaj `bin/GarminFaceTests.prg`. Przed transferem sprawdź, czy plik istnieje
+   i czy jest przeznaczony dla FR955.
+6. Pobierz wgrany plik kontrolnie przez `libmtp` i porównaj SHA-256 z lokalnym
+   plikiem release. Podaj wersję, hash commita, wgrany plik i wynik porównania.
+   Nie zgłaszaj udanego deployu, jeśli transfer się nie powiódł; działanie tarczy
+   na fizycznym zegarku wymaga osobnego potwierdzenia.
+
+Na tym Macu zainstalowane jest `libmtp` (`brew install libmtp`). Połączenie USB
+musi być wolne od innych klientów MTP, np. Garmin Express. Nie uruchamiaj
+aplikacji graficznej, aby wykryć zegarek lub przesłać plik.
+Wykrycie urządzenia i listę folderów sprawdź w terminalu:
+
+```sh
+mtp-detect
+mtp-folders
+```
+
+Transfer sprawdzony na fizycznym FR955 Solar podczas deployu `0.1.3`:
+
+1. Otwórz właściwe urządzenie przez `LIBMTP_Open_Raw_Device_Uncached`.
+   Odczytaj bieżący identyfikator pamięci oraz folderu `Apps` wewnątrz `GARMIN`;
+   nie zapisuj identyfikatorów na stałe. `LIBMTP_Get_Files_And_Folders` wymaga
+   urządzenia otwartego w tym trybie.
+2. Wywołaj `LIBMTP_Send_File_From_File` dla wybranego pliku `.prg`.
+   W metadanych ustaw nazwę docelową (domyślnie `GarminFace.prg`), rozmiar pliku,
+   `storage_id` odczytanej pamięci i `parent_id` folderu `Apps`.
+3. Sprawdź wynik funkcji i zachowaj zwrócony `item_id`. Następnie pobierz ten
+   obiekt przez `LIBMTP_Get_File_To_File` i porównaj SHA-256 obu plików.
+4. Zwolnij połączenie przez `LIBMTP_Release_Device`. Odłącz zegarek i sprawdź tarczę.
+
+Nie polegaj na samym kodzie wyjścia `mtp-sendfile`: podczas tego deployu polecenie
+ze ścieżką `/GARMIN/Apps/GarminFace.prg` zwróciło kod `0`, ale komunikat
+`Parent folder could not be found, skipping` oznaczał brak transferu.
+Bezpośredni transfer przez API z identyfikatorem folderu oraz kontrolny odczyt
+zakończyły się powodzeniem i zgodnymi sumami SHA-256.
 
 ## Kod projektu
 
