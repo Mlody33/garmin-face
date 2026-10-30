@@ -30,7 +30,11 @@ module SunArc {
         return interval == null ? null : interval[2];
     }
 
-    function draw(dc as Graphics.Dc, sunProgress as Lang.Float or Null) as Void {
+    function draw(dc as Graphics.Dc, sunProgress as Lang.Float or Null,
+                  showLabels as Lang.Boolean) as Void {
+        ProgressArc.draw(dc, 126, Graphics.ARC_CLOCKWISE, sunProgress, 0);
+        // Keep the arc visible in sleep without preparing or drawing its labels.
+        if (!showLabels) { return; }
         var interval = SolarTimes.current();
         var start = interval == null ? null : interval[0];
         var end = interval == null ? null : interval[1];
@@ -45,7 +49,6 @@ module SunArc {
             _endText = SolarTimes.eventLabel(end, !daylight);
         }
         _revision = revision;
-        ProgressArc.draw(dc, 126, Graphics.ARC_CLOCKWISE, sunProgress, 0);
         if (_font == null) {
             _font = Graphics.getVectorFont({:face => "RobotoCondensedRegular", :size => 21});
             if (_font == null) { _font = Graphics.FONT_XTINY; }

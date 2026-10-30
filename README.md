@@ -20,6 +20,8 @@ Weather uses Garmin's cached data. Solar times use the last available location;
 missing values appear as `--` or `--:--`. The face does not start GPS or a separate
 heart-rate sensor session, make network requests or run a background service.
 In low-power mode, the display updates once per minute.
+Seconds, metric icons and solar labels are hidden until the face wakes;
+metric values and progress arcs remain visible.
 
 ## Customize
 

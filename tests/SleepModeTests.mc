@@ -24,8 +24,11 @@ function secondsDisappearInSleepAndReturnAfterWakeForBothModes(logger as Test.Lo
                 view.onUpdate(dc);
                 Test.assert(view.lastDrawnSecond() >= 0);
                 for (var cycle = 0; cycle < 2; cycle += 1) {
+                    var renders = view.renderCount();
                     view.onEnterSleep();
                     view.onUpdate(dc);
+                    // Icons and solar labels are part of the cached scene.
+                    Test.assertEqual(view.renderCount(), renders + 1);
                     Test.assertEqual(view.lastDrawnSecond(), -1);
                     // Returning from an overlay and minute updates must stay asleep.
                     view.onShow();
@@ -36,8 +39,10 @@ function secondsDisappearInSleepAndReturnAfterWakeForBothModes(logger as Test.Lo
                     FaceOptions.saveAnalogSeconds(!FaceOptions.analogSeconds());
                     view.onUpdate(dc);
                     Test.assertEqual(view.lastDrawnSecond(), -1);
+                    renders = view.renderCount();
                     view.onExitSleep();
                     view.onUpdate(dc);
+                    Test.assertEqual(view.renderCount(), renders + 1);
                     Test.assert(view.lastDrawnSecond() >= 0);
                 }
                 // Some lifecycle sequences enter sleep before the first frame.

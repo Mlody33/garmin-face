@@ -28,6 +28,7 @@ class GarminFaceView extends WatchUi.WatchFace {
     private var _secondsFont as Graphics.FontType or Null = null;
     protected var _lastSecond as Lang.Number = -1;
     private var _sleeping as Lang.Boolean = false;
+    private var _frameSleeping as Lang.Boolean = false;
     private var _analog as Lang.Boolean = false;
     private var _simple as Lang.Boolean = false;
     private var _background as Lang.Number = Graphics.COLOR_BLACK;
@@ -77,7 +78,8 @@ class GarminFaceView extends WatchUi.WatchFace {
         var secondary = FaceColors.secondary();
         var accent = FaceColors.getDisplayColor();
         var dirty = _frame == null || _minuteStamp != stamp || _background != background
-            || _secondary != secondary || _accent != accent || _simple != simple || _analog != analog;
+            || _secondary != secondary || _accent != accent || _simple != simple || _analog != analog
+            || _frameSleeping != _sleeping;
         // Invalidate clock geometry immediately when the seconds layout changes.
         if (_analog != analog) { _hour = -1; }
         _simple = simple;
@@ -161,20 +163,23 @@ class GarminFaceView extends WatchUi.WatchFace {
             target.clearClip();
             target.setColor(_secondary, _background);
             target.clear();
-            if (!simple) { SunArc.draw(target, sunProgress); }
+            if (!simple) { SunArc.draw(target, sunProgress, !_sleeping); }
             WeatherRow.draw(target, FaceLayout.CENTER_X, FaceLayout.DATE_Y, _dateText);
             drawStatus(target);
             drawClock(target, clock);
             for (var index = 0; index < slots.size(); index += 1) {
                 var slot = slots[index];
                 var x = FaceLayout.fieldX(index, slots.size());
-                DataIcons.drawMetricIcon(target, x, FaceLayout.FIELD_ICON_Y, _fields[slot]);
+                if (!_sleeping) {
+                    DataIcons.drawMetricIcon(target, x, FaceLayout.FIELD_ICON_Y, _fields[slot]);
+                }
                 drawCentered(target, x, FaceLayout.FIELD_VALUE_Y, FaceFonts.text(), _values[slot], _secondary);
             }
             ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, stepProgress, 0);
             ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, activeMinutesProgress,
                 ProgressArc.ACTIVE_MINUTES_INSET);
             _minuteStamp = stamp;
+            _frameSleeping = _sleeping;
             _renderCount += 1;
         }
         if (!_sleeping) {
