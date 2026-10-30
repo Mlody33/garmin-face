@@ -15,9 +15,11 @@ class GarminFaceView extends WatchUi.WatchFace {
     private var _dateText as Lang.String = "";
     private var _hour as Lang.Number = -1;
     private var _minute as Lang.Number = -1;
-    private var _timeText as Lang.String = "";
+    private var _hourText as Lang.String = "";
+    private var _minuteText as Lang.String = "";
     private var _timeFont as Graphics.FontType = Graphics.FONT_NUMBER_THAI_HOT;
     private var _timeX as Lang.Number = 0;
+    private var _minuteX as Lang.Number = 0;
     private var _secondsX as Lang.Number = 0;
     private var _secondsY as Lang.Number = 0;
     private var _secondsTop as Lang.Number = 0;
@@ -36,6 +38,7 @@ class GarminFaceView extends WatchUi.WatchFace {
     private var _readings as Lang.Array<Lang.Number or Lang.Float or Null> = [null, null, null];
     private var _values as Lang.Array<Lang.String> = ["--", "--", "--"];
     private var _stepSweep as Lang.Number = -1;
+    private var _activeMinutesSweep as Lang.Number = -1;
     private var _sunSweep as Lang.Number = -1;
     private var _sunDaylight as Lang.Boolean or Null = null;
 
@@ -112,19 +115,27 @@ class GarminFaceView extends WatchUi.WatchFace {
             }
         }
         var stepProgress = null;
+        var activeMinutesProgress = null;
         var sunProgress = null;
         var sunDaylight = null;
         if (!simple) {
-            if (activity != null && activity.steps != null && activity.stepGoal != null && activity.stepGoal > 0) {
-                stepProgress = activity.steps.toFloat() / activity.stepGoal;
+            if (activity != null) {
+                stepProgress = ProgressArc.goalProgress(activity.steps, activity.stepGoal);
+                var minutes = activity.activeMinutesWeek;
+                // Garmin's total already includes twice the vigorous minutes.
+                activeMinutesProgress = ProgressArc.goalProgress(
+                    minutes == null ? null : minutes.total, activity.activeMinutesWeekGoal);
             }
             SunArc.refresh(now);
             sunProgress = SunArc.currentProgress(now.value());
             sunDaylight = SunArc.currentDaylight();
             var stepSweep = ProgressArc.sweep(stepProgress);
+            var activeMinutesSweep = ProgressArc.sweep(activeMinutesProgress);
             var sunSweep = ProgressArc.sweep(sunProgress);
-            if (_stepSweep != stepSweep || _sunSweep != sunSweep || _sunDaylight != sunDaylight) { dirty = true; }
+            if (_stepSweep != stepSweep || _activeMinutesSweep != activeMinutesSweep
+                || _sunSweep != sunSweep || _sunDaylight != sunDaylight) { dirty = true; }
             _stepSweep = stepSweep;
+            _activeMinutesSweep = activeMinutesSweep;
             _sunSweep = sunSweep;
             _sunDaylight = sunDaylight;
         }
@@ -148,7 +159,9 @@ class GarminFaceView extends WatchUi.WatchFace {
                 DataIcons.drawMetricIcon(target, x, FaceLayout.FIELD_ICON_Y, _fields[slot]);
                 drawCentered(target, x, FaceLayout.FIELD_VALUE_Y, FaceFonts.text(), _values[slot], _secondary);
             }
-            ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, stepProgress);
+            ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, stepProgress, 0);
+            ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, activeMinutesProgress,
+                ProgressArc.ACTIVE_MINUTES_INSET);
             _minuteStamp = stamp;
             _renderCount += 1;
         }
@@ -176,22 +189,30 @@ class GarminFaceView extends WatchUi.WatchFace {
         if (_hour != clock.hour || _minute != clock.min) {
             _hour = clock.hour;
             _minute = clock.min;
-            _timeText = _hour.format("%02d") + " " + _minute.format("%02d");
+            _hourText = _hour.format("%02d");
+            _minuteText = _minute.format("%02d");
             _timeFont = Graphics.FONT_NUMBER_THAI_HOT;
-            var width = dc.getTextWidthInPixels(_timeText, _timeFont);
+            var hourWidth = dc.getTextWidthInPixels(_hourText, _timeFont);
+            var width = hourWidth + 10 + dc.getTextWidthInPixels(_minuteText, _timeFont);
             var secondsWidth = _analog ? 0 : _secondsWidth - 2;
             var gap = _analog ? 0 : 5;
             if (width + gap + secondsWidth > 236) {
                 _timeFont = Graphics.FONT_NUMBER_HOT;
-                width = dc.getTextWidthInPixels(_timeText, _timeFont);
+                hourWidth = dc.getTextWidthInPixels(_hourText, _timeFont);
+                width = hourWidth + 10 + dc.getTextWidthInPixels(_minuteText, _timeFont);
             }
             var left = (260 - width - gap - secondsWidth) / 2;
-            _timeX = left + width / 2;
+            _timeX = left;
+            _minuteX = left + hourWidth + 10;
             _secondsX = left + width + 5;
             _secondsY = 130 + (_timeFont == Graphics.FONT_NUMBER_THAI_HOT ? 21 : 17);
             _secondsTop = _secondsY - _secondsHeight / 2;
         }
-        drawCentered(dc, _timeX, 130, _timeFont, _timeText, _accent);
+        dc.setColor(_accent, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(_timeX, 130, _timeFont, _hourText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+        dc.drawText(_minuteX, 130, _timeFont, _minuteText,
+            Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
     function onPartialUpdate(dc as Graphics.Dc) as Void {

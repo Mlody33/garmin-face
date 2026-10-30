@@ -9,12 +9,12 @@ function analogPointerRunsClockwiseOutsideWatchFaceContent(logger as Test.Logger
     var bottom = AnalogSeconds.marker(30);
     var left = AnalogSeconds.marker(45);
     Test.assertEqual(top[0], 130);
-    Test.assertEqual(top[1], 8);
-    Test.assertEqual(right[0], 252);
+    Test.assertEqual(top[1], 14);
+    Test.assertEqual(right[0], 246);
     Test.assertEqual(right[1], 130);
     Test.assertEqual(bottom[0], 130);
-    Test.assertEqual(bottom[1], 252);
-    Test.assertEqual(left[0], 8);
+    Test.assertEqual(bottom[1], 246);
+    Test.assertEqual(left[0], 14);
     Test.assertEqual(left[1], 130);
     for (var second = 0; second < 60; second += 1) {
         var point = AnalogSeconds.marker(second);
@@ -24,9 +24,10 @@ function analogPointerRunsClockwiseOutsideWatchFaceContent(logger as Test.Logger
                 var dx = point[0] + x - 130;
                 var dy = point[1] + y - 130;
                 var distanceSquared = dx * dx + dy * dy;
-                // Stay inside the arcs' inner radius (126 px) at every second.
-                Test.assert(distanceSquared < 126 * 126);
-                Test.assert(distanceSquared >= 118 * 118);
+                // Stay inside the new inner arc, including the whole dot.
+                var innerArcInnerRadius = 126 - ProgressArc.ACTIVE_MINUTES_INSET;
+                Test.assert(distanceSquared < innerArcInnerRadius * innerArcInnerRadius);
+                Test.assert(distanceSquared >= 112 * 112);
             }
         }
     }

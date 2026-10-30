@@ -136,6 +136,8 @@ function solarNativeApiReturnsDatedNextDaySunrise(logger as Test.Logger) as Lang
     Test.assertEqual(current[1], tomorrowRise.value());
     Test.assertEqual(SolarTimes.eventText(current[0]), "16:16");
     Test.assertEqual(SolarTimes.eventText(current[1]), "06:25");
+    Test.assertEqual(SolarTimes.eventLabel(current[0], false), "16:16 -2");
+    Test.assertEqual(SolarTimes.eventLabel(current[1], true), "06:25 +2");
     logger.debug("DATED SOLAR: today rise=" + todayRise.value() + " tomorrow rise=" + tomorrowRise.value());
     return true;
 }
@@ -169,5 +171,32 @@ function solarNoLocationDoesNotReuseAnUndatedTime(logger as Test.Logger) as Lang
     SolarTimes.refresh(Time.now(), null);
     Test.assert(SolarTimes.current() == null);
     Test.assertEqual(SolarTimes.eventText(null), "--:--");
+    return true;
+}
+
+(:test)
+function solarChangesCompareSameEventOnPreviousCalendarDay(logger as Test.Logger) as Lang.Boolean {
+    var warsaw = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
+    var events = SolarTest.events();
+    Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 5, 23), true, events, warsaw), 2);
+    Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 16), false, events, warsaw), -2);
+    // After sunset the right endpoint is tomorrow's sunrise, compared with today's.
+    Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(30, 5, 25), true, events, warsaw), 2);
+    // Never substitute a sunrise for a missing sunset or skip a missing calendar day.
+    Test.assert(SolarTimes.changeMinutes(SolarTest.epoch(28, 15, 18), false, events, warsaw) == null);
+    Test.assert(SolarTimes.changeMinutes(SolarTest.epoch(30, 15, 14), false,
+        [[SolarTest.epoch(28, 15, 18), false]], warsaw) == null);
+    return true;
+}
+
+(:test)
+function solarChangesFollowDisplayedMinutesAndHandleDst(logger as Test.Logger) as Lang.Boolean {
+    var warsaw = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
+    var previous = Gregorian.moment({:year => 2026, :month => 10, :day => 24, :hour => 15, :minute => 20}).value();
+    var current = SolarTest.epoch(25, 15, 18);
+    // 17:20 CEST -> 16:18 CET is 62 minutes earlier on the watch's clock.
+    Test.assertEqual(SolarTimes.changeMinutes(current, false, [[previous, false]], warsaw), -62);
+    Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18) + 59, false,
+        [[SolarTest.epoch(28, 15, 18) + 1, false]], warsaw), 0);
     return true;
 }

@@ -13,6 +13,7 @@ module SolarTimes {
     var _latitude as Lang.Number = 0;
     var _longitude as Lang.Number = 0;
     var _location as Position.Location or Null = null;
+    var _revision as Lang.Number = 0;
 
     function dateAnchor(now as Time.Moment, location as Position.Location) as Time.Moment {
         var local = Gregorian.localMoment(location, now);
@@ -38,6 +39,7 @@ module SolarTimes {
 
     function refresh(now as Time.Moment, location as Position.Location or Null) as Void {
         if (location == null) {
+            if (_location != null) { _revision += 1; }
             _events = []; _interval = null; _location = null; _day = -1;
             return;
         }
@@ -47,6 +49,7 @@ module SolarTimes {
         var longitude = Math.round(coordinates[1] * 1000).toNumber();
         if (_location == null || _day != anchor.value() || _latitude != latitude || _longitude != longitude) {
             _events = eventsAround(anchor, location);
+            _revision += 1;
             _interval = null;
             _day = anchor.value();
             _latitude = latitude;
@@ -77,6 +80,41 @@ module SolarTimes {
     }
 
     function current() as [Lang.Number, Lang.Number, Lang.Boolean] or Null { return _interval; }
+
+    function revision() as Lang.Number { return _revision; }
+
+    function localMinute(timestamp as Lang.Number, location as Position.Location) as Lang.Number {
+        var event = new Time.Moment(timestamp);
+        var local = Gregorian.localMoment(location, event);
+        var info = local == null ? Gregorian.info(event, Time.FORMAT_SHORT) : Gregorian.info(local, Time.FORMAT_SHORT);
+        return info.hour * 60 + info.min;
+    }
+
+    // Compare displayed local times of the same event on consecutive calendar days.
+    // The previous event may belong to yesterday or two days ago for a night interval.
+    function changeMinutes(timestamp as Lang.Number, sunrise as Lang.Boolean,
+            events as Lang.Array<[Lang.Number, Lang.Boolean]>, location as Position.Location) as Lang.Number or Null {
+        var previousDay = dateAnchor(new Time.Moment(timestamp), location).value() - 86400;
+        for (var i = 0; i < events.size(); i += 1) {
+            var event = events[i];
+            if (event[1] != sunrise || event[0] >= timestamp) { continue; }
+            if (dateAnchor(new Time.Moment(event[0]), location).value() != previousDay) { continue; }
+            var difference = localMinute(timestamp, location) - localMinute(event[0], location);
+            // A solar event crossing local midnight still shifts by only a few minutes.
+            if (difference > 720) { difference -= 1440; }
+            else if (difference < -720) { difference += 1440; }
+            return difference;
+        }
+        return null;
+    }
+
+    function eventLabel(timestamp as Lang.Number or Null, sunrise as Lang.Boolean) as Lang.String {
+        var text = eventText(timestamp);
+        if (timestamp == null || _location == null) { return text; }
+        var change = changeMinutes(timestamp, sunrise, _events, _location as Position.Location);
+        if (change == null) { return text; }
+        return text + " " + (change >= 0 ? "+" : "") + change.toString();
+    }
 
     function progress(now as Lang.Number, interval as [Lang.Number, Lang.Number, Lang.Boolean] or Null) as Lang.Float or Null {
         if (interval == null || interval[1] <= interval[0] || now < interval[0] || now >= interval[1]) { return null; }

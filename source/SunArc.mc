@@ -9,6 +9,7 @@ module SunArc {
     var _startText as Lang.String = "--:--";
     var _endText as Lang.String = "--:--";
     var _stamp as Lang.Number = -1;
+    var _revision as Lang.Number = -1;
 
     function invalidate() as Void { _stamp = -1; }
 
@@ -33,9 +34,18 @@ module SunArc {
         var interval = SolarTimes.current();
         var start = interval == null ? null : interval[0];
         var end = interval == null ? null : interval[1];
-        if (start != _startEvent) { _startEvent = start; _startText = SolarTimes.eventText(start); }
-        if (end != _endEvent) { _endEvent = end; _endText = SolarTimes.eventText(end); }
-        ProgressArc.draw(dc, 126, Graphics.ARC_CLOCKWISE, sunProgress);
+        var revision = SolarTimes.revision();
+        var daylight = interval != null && interval[2];
+        if (start != _startEvent || _revision != revision) {
+            _startEvent = start;
+            _startText = SolarTimes.eventLabel(start, daylight);
+        }
+        if (end != _endEvent || _revision != revision) {
+            _endEvent = end;
+            _endText = SolarTimes.eventLabel(end, !daylight);
+        }
+        _revision = revision;
+        ProgressArc.draw(dc, 126, Graphics.ARC_CLOCKWISE, sunProgress, 0);
         if (_font == null) {
             _font = Graphics.getVectorFont({:face => "RobotoCondensedRegular", :size => 21});
             if (_font == null) { _font = Graphics.FONT_XTINY; }

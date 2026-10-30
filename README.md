@@ -10,6 +10,11 @@ okrągły ekran MIP 260 × 260 px, minimum API 4.2.2.
   razem; pojedyncza aktywna ikona zajmuje środek.
 - W dzień: wschód po lewej, zachód po prawej. W nocy: ostatni zachód po lewej,
   następny wschód po prawej, w formacie 24 h.
+  Przy każdej godzinie jest zmiana w minutach względem tego samego zdarzenia
+  poprzedniego dnia kalendarzowego, np. `16:16 -2` lub `06:25 +2`.
+  Plus oznacza późniejszą godzinę, minus — wcześniejszą. Porównywane są lokalne
+  godziny widoczne na tarczy, z uwzględnieniem zmiany czasu. Brak poprzedniego
+  zdarzenia pozostawia samą godzinę. Wyniki korzystają z istniejącego bufora zdarzeń.
 - Niżej wspólny wyśrodkowany wiersz: data i bieżąca pogoda, z odstępem 14 px.
   Data ma postać `Cz, 29 Paź`, zgodną z językiem zegarka; temperatura jest w °C.
 - Trzy dolne pola, z wartościami nad ikonami, domyślnie: kroki, dzienne kilokalorie i stres.
@@ -18,6 +23,10 @@ okrągły ekran MIP 260 × 260 px, minimum API 4.2.2.
   Górny łuk wypełnia się od lewego zdarzenia do prawego: w dzień od wschodu
   do zachodu, w nocy od zachodu do wschodu przez północ. O wschodzie i zachodzie
   zaczyna nowy odcinek od zera; o północy nie resetuje się.
+- Drugi, wewnętrzny dolny łuk pokazuje tygodniowe aktywne minuty względem celu
+  ustawionego w Garminie. Korzysta z gotowej sumy Garmina, w której intensywne
+  minuty są liczone podwójnie. Ma ten sam kolor i długość 72°, promień 122 px
+  i odstęp 2 px od łuku kroków. Analogowy sekundnik biegnie po ich wewnętrznej stronie.
 
 Temperatura, data i dolne wartości mają wspólną pogrubioną czcionkę o wysokości 26 px.
 Sekundy używają tej samej rodziny czcionki w rozmiarze 25 px.
@@ -26,7 +35,7 @@ Układ i obszary dotyku są zapisane wspólnie w `source/FaceLayout.mc`.
 
 Brak pomiaru jest oznaczany `--` lub `--:--`. Stres jest prawidłowy w zakresie
 0–100. Kalorie to dzienna suma Garmina, obejmująca spoczynkowe i aktywne.
-Brakujący lub zerowy cel kroków pozostawia pusty łuk; przekroczenie celu
+Brakujący lub zerowy cel kroków lub aktywnych minut pozostawia pusty łuk; przekroczenie celu
 wypełnia go maksymalnie do 100%.
 
 ## Dostosowanie na zegarku
@@ -40,9 +49,9 @@ i **Pokonane piętra** oraz **Brak**. Pola są niezależne i mogą powtarzać t�
 i automatycznie się wyśrodkowują: trzy, dwa lub jedno. Można ukryć wszystkie pola.
 Obszary przytrzymania przesuwają się razem z polami i nadal prowadzą do właściwych danych.
 Dystans jest dzienny, w kilometrach z jednym miejscem po przecinku.
-Dolny łuk zawsze pokazuje cel kroków.
+Zewnętrzny dolny łuk zawsze pokazuje cel kroków, wewnętrzny — cel aktywnych minut.
 
-**Kolor akcentu** wybiera wspólny pastelowy kolor dużej godziny i wypełnień obu
+**Kolor akcentu** wybiera wspólny pastelowy kolor dużej godziny i wypełnień wszystkich
 łuków: biały, szary, czerwony, pomarańczowy, żółty, zielony, niebieski, fioletowy
 lub różowy. Sekundy i pozostałe dane pozostają szare.
 
@@ -56,7 +65,7 @@ START zapisuje wybór, BACK wraca bez zmiany. Ustawienia są przechowywane przez
 stary osobny kolor godziny jest przejmowany jako akcent, jeśli akcentu jeszcze
 nie zapisano. Nieprawidłowy zapis przywraca wartość domyślną.
 
-**Dostosuj → Prosty widok** ukrywa oba łuki przy krawędziach tarczy oraz godziny
+**Dostosuj → Prosty widok** ukrywa wszystkie łuki oraz godziny
 wschodu i zachodu słońca. Znikają całe łuki, razem z ciemnoszarymi torami.
 Nie zmienia liczby dolnych pól ani ich położenia; o ich widoczności decyduje wyłącznie **Brak**.
 W obu widokach data z pogodą i dolne wartości mają symetryczny odstęp od godziny:
@@ -64,7 +73,7 @@ W obu widokach data z pogodą i dolne wartości mają symetryczny odstęp od god
 Wybór jest zapamiętywany; domyślnie prosty widok jest wyłączony.
 
 **Dostosuj → Analogowy sekundnik** zastępuje cyfrowe sekundy kropką o promieniu
-3 px, w kolorze akcentu. Jej środek porusza się w odległości 122 px od środka
+3 px, w kolorze akcentu. Jej środek porusza się w odległości 116 px od środka
 tarczy, z odstępem od górnego i dolnego łuku. Przesuwa się co sekundę
 zgodnie z ruchem wskazówek: 0 u góry, 15 po prawej, 30 na dole, 45 po lewej.
 Godzina bez cyfrowych sekund jest wyśrodkowana. Sekundnik działa niezależnie od

@@ -5,7 +5,7 @@ import Toybox.Math;
 // Keep the dot inside the progress arcs and cache its 60 positions.
 module AnalogSeconds {
     const RADIUS = 3;
-    const ORBIT = 122;
+    const ORBIT = 116;
     var _markers as Lang.Array<[Lang.Number, Lang.Number]> = [];
     var _clips as Lang.Array<[Lang.Number, Lang.Number, Lang.Number, Lang.Number]> = [];
     var _background as Lang.Number = Graphics.COLOR_BLACK;
