@@ -18,6 +18,7 @@ module MetricFields {
     var _fields as Lang.Array<Lang.String> = [STEPS, CALORIES, STRESS];
     var _visibleSlots as Lang.Array<Lang.Number> = [0, 1, 2];
     var _heartRateId as Complications.Id or Null = null;
+    var _needsActivity as Lang.Boolean = true;
 
     function choices() as Lang.Array<Lang.String> {
         return [STEPS, CALORIES, STRESS, HEART_RATE, BATTERY, DISTANCE, FLOORS, NONE];
@@ -63,10 +64,17 @@ module MetricFields {
 
     function updateVisibleSlots() as Void {
         _visibleSlots = [];
+        _needsActivity = false;
         for (var slot = 0; slot < FaceLayout.FIELD_COUNT; slot += 1) {
-            if (!_fields[slot].equals(NONE)) { _visibleSlots.add(slot); }
+            var metric = _fields[slot];
+            if (!metric.equals(NONE)) {
+                _visibleSlots.add(slot);
+                if (!metric.equals(BATTERY) && !metric.equals(HEART_RATE)) { _needsActivity = true; }
+            }
         }
     }
+
+    function needsActivity() as Lang.Boolean { return _needsActivity; }
 
     function label(metric as Lang.String) as Lang.String {
         var resource = Rez.Strings.StepsLabel;
@@ -82,14 +90,14 @@ module MetricFields {
         return WatchUi.loadResource(resource) as Lang.String;
     }
 
-    function value(metric as Lang.String, activity as ActivityMonitor.Info) as Lang.Number or Lang.Float or Null {
+    function value(metric as Lang.String, activity as ActivityMonitor.Info or Null) as Lang.Number or Lang.Float or Null {
         switch (metric) {
-            case STEPS: return activity.steps;
-            case CALORIES: return activity.calories;
-            case STRESS: return activity has :stressScore ? activity.stressScore : null;
+            case STEPS: return activity == null ? null : activity.steps;
+            case CALORIES: return activity == null ? null : activity.calories;
+            case STRESS: return activity != null && activity has :stressScore ? activity.stressScore : null;
             case BATTERY: return System.getSystemStats().battery;
-            case DISTANCE: return activity.distance;
-            case FLOORS: return activity.floorsClimbed;
+            case DISTANCE: return activity == null ? null : activity.distance;
+            case FLOORS: return activity == null ? null : activity.floorsClimbed;
             case HEART_RATE:
                 // Read the watch's existing measurement; do not start a sensor session.
                 if (_heartRateId == null) {

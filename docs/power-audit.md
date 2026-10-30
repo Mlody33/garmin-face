@@ -1,4 +1,93 @@
-# Audyt energetyczny — 2026-10-29
+# Audyt energetyczny — aktualizacja 2026-10-30
+
+Przejrzano wszystkie moduły `source/`, testy, zasoby, manifest i skrypty budowania.
+Zachowano wygląd aktywnej tarczy; sekundnik jest teraz ukrywany w spoczynku.
+Wydanie `0.1.3` obejmuje opisane optymalizacje oraz ukrywanie sekundnika w spoczynku.
+
+## Sekundy tylko po wybudzeniu — 2026-10-30
+
+Na życzenie użytkownika oba sekundniki znikają po `onEnterSleep()` i wracają po
+`onExitSleep()`. Zmiana stanu zleca pełną aktualizację: gotowa scena bez sekund
+usuwa ostatnią cyfrę lub kropkę. Układ godziny pozostaje stały. W spoczynku
+pomijane jest też przygotowanie buforów sekundnika.
+
+Usunięto implementację `onPartialUpdate()`, więc tarcza nie rysuje co sekundę
+w trybie niskiego poboru energii. Minutowe `onUpdate()` nadal aktualizuje godzinę,
+dane i łuki. W aktywnym trybie sekundy rysowane są przez pełne `onUpdate()`.
+Poniższe benchmarki częściowych aktualizacji opisują wcześniejszy etap audytu.
+
+Weryfikacja końcowej wersji: 36/36 testów w symulatorze FR955 i poprawna
+kompilacja release `bash scripts/build.sh -r -w -l 1`. Test cyklu życia obejmuje
+oba sekundniki i oba tła, wielokrotne uśpienie/wybudzenie, powrót z nakładki,
+zmianę rodzaju sekundnika podczas spoczynku i uśpienie przed pierwszą klatką.
+Kod pomocniczy tego testu nie trafia do release PRG.
+W zwykłym symulatorze potwierdzono też dla cyfr przejście High Power →
+Always-Active → High Power: sekundy znikają bez śladu i wracają z aktualnym czasem.
+
+## Dalsze optymalizacje — 2026-10-30
+
+- Cyfrowy sekundnik przy niezmienionej cyfrze dziesiątek kopiuje tylko gotowy obraz
+  jedności. Nie czyści prostokąta i nie kopiuje dziesiątek: nieprzezroczysty obraz
+  cyfry odtwarza również tło. Pełne odrysowanie, zmiana dziesiątek, przejście
+  59 → 00 i proporcjonalny font awaryjny zachowują pełną ścieżkę. Decyzja porównuje
+  faktycznie narysowaną poprzednią sekundę, więc obsługuje pominięte wywołania.
+- Przy foncie o stałej szerokości nie są przechowywane dodatkowo napisy `00`–`59`.
+  Nadal nie powstają napisy ani tablice w `onPartialUpdate`.
+- Zmiana rozmiaru fontu przebudowuje bufory cyfr z właściwymi wymiarami.
+- W prostym widoku bateria, tętno i ukryte pola nie wymagają
+  `ActivityMonitor.getInfo()`. Zależność od aktywności jest ustalana przy zmianie
+  ustawień, zamiast ponownie przeglądać wybory co sekundę. Pełny widok nadal
+  pobiera aktywność dla łuków celów. Powtarzające się pola nadal dzielą odczyt.
+
+Osobne pomiary testu `renderingPerformance`, bez równoległego uruchamiania
+kompilatora lub długiego testu przejść cyfr; SDK 9.3.0, FR955, `-O 3p`:
+
+| 1200 aktualizacji cyfrowych sekund | Przed zmianą | Po zmianie |
+| --- | ---: | ---: |
+| Ciemne tło | 452 ms | 264 ms |
+| Jasne tło | 464 ms | 272 ms |
+
+W tych pojedynczych przebiegach czas tej operacji spadł o około 42%.
+Pełne aktualizacje pozostały na podobnym poziomie (50 wywołań: 96–115 ms przed,
+98–118 ms po, zależnie od tła i rodzaju sekundnika).
+To wynik wykonania i rysowania w symulatorze, a nie pomiar prądu. Węższy obszar
+cyfry nie oznacza proporcjonalnego spadku kosztu fizycznego wyświetlacza;
+wysokość odświeżanego obszaru pozostaje taka sama. Nie wyznaczono procentowego
+wydłużenia pracy baterii.
+
+Weryfikacja: kompilacja testowa `bash scripts/build.sh --tests -w -l 1`,
+35/35 testów w symulatorze oraz release `bash scripts/build.sh -r -w -l 1`.
+Nowy test wykonuje wszystkie pary poprzedniej i bieżącej sekundy dla obu teł
+i kilku rozmiarów fontu oraz sprawdza wymiary buforów po zmianie fontu.
+Jest to test poprawnego wykonania i zarządzania buforami, bez porównania pikseli.
+Osobny test sprawdza odczyty niezależne od aktywności i zmianę zależności po
+zapisie oraz ponownym wczytaniu ustawień. W normalnym PRG nie ma kodu testów.
+
+## Wnioski z przeglądu całego kodu
+
+- `GarminFaceView`, `AnalogSeconds`, `DigitalSeconds`: sekundnik jest przygotowywany
+  i rysowany tylko w aktywnym trybie. W spoczynku nie ma własnej implementacji
+  częściowej aktualizacji.
+- `WeatherRow`, `SunArc`, `SolarTimes`, `SolarPosition`: pogoda i rozwiązywanie
+  pozycji najwyżej raz na minutę oraz po powrocie do tarczy; zdarzenia słoneczne
+  buforowane według dnia i zaokrąglonej pozycji. Brak aktywnego GPS i żądań sieciowych.
+  Prosty widok pomija słońce. Zapis pozycji jest warunkowy.
+- `MetricFields`: odczyty istniejących pomiarów, bez uruchamiania czujnika tętna;
+  formatowanie po zmianie wartości, odrysowanie po zmianie widocznego tekstu.
+- `DataIcons`, `FaceFonts`, `FaceColors`, `FaceOptions`, `FaceLayout`, `ProgressArc`:
+  zasoby i ustawienia w pamięci, geometria stała, łuki ograniczone do 72°.
+- `GarminFaceApp`, `SettingsMenu`, `MetricNavigation`: praca przy starcie lub
+  interakcji użytkownika; brak timerów, subskrypcji budzących tarczę i usług w tle.
+- Skrypty oraz zasoby SVG nie wykonują się w pętli sekundnika; kompilator używa
+  `-O 3p`. Manifest zawiera `ComplicationSubscriber` i `Positioning`.
+
+Nie można dowieść absolutnie minimalnego poboru energii samą analizą kodu.
+Dalsza ocena oszczędności wymaga pomiarów na fizycznym FR955.
+Sekundnik w spoczynku wyłączono zgodnie z decyzją użytkownika.
+Zalecenie ograniczania obszaru aktualizacji wynika z dokumentacji
+[WatchFace.onPartialUpdate](https://developer.garmin.com/connect-iq/api-docs/Toybox/WatchUi/WatchFace.html).
+
+## Poprzedni audyt — 2026-10-29
 
 Profil: Forerunner 955 / Solar, Connect IQ SDK 9.3.0, API urządzenia 5.2.0.
 Punkt odniesienia: tag `1.1`, commit `caaa367`. Zachowano wygląd i ustawienia.
@@ -25,7 +114,7 @@ Obliczenia są buforowane według dnia i pozycji; opis bieżącej logiki jest w 
 
 `MetricFields` korzysta z pomiarów już wykonanych przez zegarek. Nie uruchamia czujnika tętna. `DataIcons` ładuje zasoby leniwie i zachowuje je w pamięci. `FaceFonts`, kolory i ustawienia również są przechowywane w pamięci. Menu i nawigacja działają w reakcji na użytkownika, nie w pętli sekundnika. `ProgressArc` ogranicza wypełnienie do 72°.
 
-Nie dodano timera, aktywnego GPS, żądania sieciowego, usługi w tle ani wybudzania zegarka. Jedynym uprawnieniem pozostaje `ComplicationSubscriber`.
+Nie dodano timera, aktywnego GPS, żądania sieciowego, usługi w tle ani wybudzania zegarka. Wtedy jedynym uprawnieniem było `ComplicationSubscriber`; obecnie jest także pasywne `Positioning` opisane powyżej.
 
 ## Porównanie czasu wykonania
 

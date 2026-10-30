@@ -39,7 +39,7 @@ function renderingPerformance(logger as Test.Logger) as Lang.Boolean {
             var height = dc.getFontHeight(font) + 4;
             start = System.getTimer();
             for (var frame = 0; frame < 1200; frame += 1) {
-                DigitalSeconds.draw(dc, 10, height / 2, 0, width, frame % 60);
+                DigitalSeconds.draw(dc, 10, height / 2, 0, width, frame % 60, frame == 0 ? -1 : (frame - 1) % 60);
             }
             logger.debug("BENCH digital1200 light=" + light + " ms=" + (System.getTimer() - start)
                 + " atlas=" + DigitalSeconds._canRasterize);

@@ -80,6 +80,10 @@ Godzina bez cyfrowych sekund jest wyśrodkowana. Sekundnik działa niezależnie 
 **Prostego widoku**; zmiana jednej opcji nie przełącza drugiej. Jest rysowany na
 wierzchu, po wewnętrznej stronie łuków. Ustawienia są zapamiętywane.
 
+Oba rodzaje sekundnika są widoczne tylko po wybudzeniu tarczy, np. gestem
+nadgarstka. W spoczynku sekundy znikają, a godzina pozostaje w tym samym miejscu.
+Po ponownym wybudzeniu sekundnik wraca z aktualną sekundą.
+
 Przytrzymanie ikony lub liczby dolnego pola wywołuje natywny widok Garmina przez
 `WatchFaceDelegate.onPress()` i `Complications.exitTo()`. Skrót uwzględnia wybraną
 wartość. Dzienny dystans otwiera widok kroków, ponieważ API nie udostępnia osobnego
@@ -109,8 +113,10 @@ Ikona alarmu zależy od `alarmCount > 0`, a braku połączenia od `!phoneConnect
 Licznik powiadomień nie jest wyświetlany.
 
 `onUpdate()` rysuje pełną tarczę: raz na minutę w trybie oszczędnym i co sekundę
-przez krótki czas po wybudzeniu. `onPartialUpdate()` odświeża wyłącznie mały
-prostokąt cyfr sekund lub obszar poprzedniej i nowej pozycji analogowego wskaźnika.
+przez krótki czas po wybudzeniu. `onEnterSleep()` ukrywa sekundnik i zleca
+odrysowanie ekranu z bufora, aby usunąć ostatnią cyfrę lub kropkę.
+`onExitSleep()` przywraca sekundnik. Tarcza nie implementuje `onPartialUpdate()`:
+w spoczynku nie wykonuje własnego kodu rysowania co sekundę.
 Nie ma timerów ani usług w tle.
 
 Kod przechowuje wynik pomiaru godziny do zmiany minuty, datę do zmiany dnia lub
@@ -126,9 +132,7 @@ ponownie po zmianie lokalnego dnia lub pozycji (z dokładnością ok. 0,001°).
 Ukryte wszystkie pola w prostym widoku nie powodują odczytu aktywności.
 
 Cyfry sekund są rasteryzowane raz po zmianie tła. Kropka korzysta z gotowych
-współrzędnych i małych obszarów odświeżania, również przy przejściu 59 → 00.
-Zwykłe częściowe odświeżanie nie tworzy napisów, tablic ani fontów i nie pobiera danych.
-Kropka odtwarza piksele z bufora pod poprzednią pozycją, zamiast wymazywać ewentualną ikonę.
+współrzędnych. Przygotowanie sekundnika i jego rysowanie są pomijane w spoczynku.
 Raport porównawczy i zakres pomiarów: [docs/power-audit.md](docs/power-audit.md).
 
 ## Uruchomienie projektu

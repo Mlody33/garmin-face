@@ -24,16 +24,22 @@ module DigitalSeconds {
         for (var digit = 0; digit < 10; digit += 1) {
             if (dc.getTextWidthInPixels(digit.toString(), font) != _digitWidth) { _canRasterize = false; }
         }
-        if (_text.size() == 0) {
-            for (var second = 0; second < 60; second += 1) { _text.add(second.format("%02d")); }
-        }
         for (var second = 0; second < 60; second += 1) {
-            if (dc.getTextWidthInPixels(_text[second], font) != 2 * _digitWidth) { _canRasterize = false; }
+            if (dc.getTextWidthInPixels(second.format("%02d"), font) != 2 * _digitWidth) { _canRasterize = false; }
         }
-        if (!_canRasterize) { _digits = []; return; }
+        if (!_canRasterize) {
+            if (_text.size() == 0) {
+                for (var second = 0; second < 60; second += 1) { _text.add(second.format("%02d")); }
+            }
+            _digits = [];
+            return;
+        }
+        _text = [];
         for (var digit = 0; digit < 10; digit += 1) {
             if (_digits.size() <= digit) {
                 _digits.add(Graphics.createBufferedBitmap({:width => _digitWidth, :height => _height}).get() as Graphics.BufferedBitmap);
+            } else if (_digits[digit].getWidth() != _digitWidth || _digits[digit].getHeight() != _height) {
+                _digits[digit] = Graphics.createBufferedBitmap({:width => _digitWidth, :height => _height}).get() as Graphics.BufferedBitmap;
             }
             var target = _digits[digit].getDc();
             target.setColor(background, background);
@@ -45,7 +51,17 @@ module DigitalSeconds {
     }
 
     function draw(dc as Graphics.Dc, x as Lang.Number, y as Lang.Number,
-                  top as Lang.Number, width as Lang.Number, second as Lang.Number) as Void {
+                  top as Lang.Number, width as Lang.Number, second as Lang.Number,
+                  previous as Lang.Number) as Void {
+        // Opaque digit tiles also erase the previous glyph. Keep the tens digit
+        // and surrounding pixels untouched on nine out of ten ordinary ticks.
+        // Compare actual values so skipped ticks and 59 -> 00 remain correct.
+        if (_canRasterize && previous >= 0 && previous / 10 == second / 10) {
+            dc.setClip(x + _digitWidth, top, _digitWidth, _height);
+            dc.drawBitmap(x + _digitWidth, top, _digits[second % 10]);
+            dc.clearClip();
+            return;
+        }
         dc.setClip(x - 1, top, width, _height);
         dc.setColor(_background, _background);
         dc.fillRectangle(x - 1, top, width, _height);

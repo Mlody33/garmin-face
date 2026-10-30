@@ -112,3 +112,33 @@ function noneFieldsPersistAndCompactWithoutLosingSlotIdentity(logger as Test.Log
     TestStorage.restore(keys, previous);
     return true;
 }
+
+(:test)
+function independentMetricsWorkWithoutActivityAndDependenciesFollowSettings(logger as Test.Logger) as Lang.Boolean {
+    var keys = [MetricFields.key(0), MetricFields.key(1), MetricFields.key(2)];
+    var previous = [Storage.getValue(keys[0]), Storage.getValue(keys[1]), Storage.getValue(keys[2])];
+    try {
+        MetricFields.save(0, MetricFields.BATTERY);
+        MetricFields.save(1, MetricFields.HEART_RATE);
+        MetricFields.save(2, MetricFields.NONE);
+        MetricFields.load();
+        Test.assert(!MetricFields.needsActivity());
+        Test.assert(MetricFields.value(MetricFields.BATTERY, null) != null);
+        // A missing native heart-rate reading is also valid; this must not need activity info.
+        MetricFields.value(MetricFields.HEART_RATE, null);
+        var metrics = [MetricFields.STEPS, MetricFields.CALORIES, MetricFields.STRESS,
+            MetricFields.DISTANCE, MetricFields.FLOORS];
+        for (var i = 0; i < metrics.size(); i += 1) {
+            MetricFields.save(2, metrics[i]);
+            Test.assert(MetricFields.needsActivity());
+            Test.assert(MetricFields.value(metrics[i], null) == null);
+            MetricFields.save(2, MetricFields.NONE);
+            Test.assert(!MetricFields.needsActivity());
+        }
+    } catch (ex) {
+        TestStorage.restore(keys, previous);
+        throw ex;
+    }
+    TestStorage.restore(keys, previous);
+    return true;
+}

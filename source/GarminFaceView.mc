@@ -26,7 +26,8 @@ class GarminFaceView extends WatchUi.WatchFace {
     private var _secondsWidth as Lang.Number = 0;
     private var _secondsHeight as Lang.Number = 0;
     private var _secondsFont as Graphics.FontType or Null = null;
-    private var _lastSecond as Lang.Number = -1;
+    protected var _lastSecond as Lang.Number = -1;
+    private var _sleeping as Lang.Boolean = false;
     private var _analog as Lang.Boolean = false;
     private var _simple as Lang.Boolean = false;
     private var _background as Lang.Number = Graphics.COLOR_BLACK;
@@ -46,6 +47,17 @@ class GarminFaceView extends WatchUi.WatchFace {
 
     // Cheap diagnostic: number of scene rebuilds, independent of second ticks.
     function renderCount() as Lang.Number { return _renderCount; }
+
+    function onEnterSleep() as Void {
+        _sleeping = true;
+        // Repaint from the scene without seconds so the last digit/dot disappears.
+        WatchUi.requestUpdate();
+    }
+
+    function onExitSleep() as Void {
+        _sleeping = false;
+        WatchUi.requestUpdate();
+    }
 
     function onShow() as Void {
         // Settings, notifications or another view may have covered the display.
@@ -93,7 +105,7 @@ class GarminFaceView extends WatchUi.WatchFace {
         WeatherRow.refresh(stamp);
 
         var slots = MetricFields.visibleSlots();
-        var activity = slots.size() > 0 || !simple ? ActivityMonitor.getInfo() : null;
+        var activity = !simple || MetricFields.needsActivity() ? ActivityMonitor.getInfo() : null;
         for (var slot = 0; slot < FaceLayout.FIELD_COUNT; slot += 1) {
             var metric = MetricFields.get(slot);
             var changed = !_fields[slot].equals(metric);
@@ -106,7 +118,7 @@ class GarminFaceView extends WatchUi.WatchFace {
                 if (_fields[prior].equals(metric)) { duplicate = prior; break; }
             }
             var reading = duplicate >= 0 ? _readings[duplicate]
-                : MetricFields.value(metric, activity as ActivityMonitor.Info);
+                : MetricFields.value(metric, activity);
             if (changed || reading != _readings[slot]) {
                 var text = duplicate >= 0 ? _values[duplicate] : MetricFields.formatValue(metric, reading);
                 if (!_values[slot].equals(text)) { dirty = true; }
@@ -165,13 +177,15 @@ class GarminFaceView extends WatchUi.WatchFace {
             _minuteStamp = stamp;
             _renderCount += 1;
         }
-        if (analog) { AnalogSeconds.prepare(_background, _accent); }
-        else { DigitalSeconds.prepare(dc, _secondsFont as Graphics.FontType, _background, _secondary); }
+        if (!_sleeping) {
+            if (analog) { AnalogSeconds.prepare(_background, _accent); }
+            else { DigitalSeconds.prepare(dc, _secondsFont as Graphics.FontType, _background, _secondary); }
+        }
         // Always repaint the whole display on onUpdate (overlays can invalidate it).
         dc.clearClip();
         dc.drawBitmap(0, 0, _frame as Graphics.BufferedBitmap);
         _lastSecond = -1;
-        drawSecond(dc, clock.sec);
+        if (!_sleeping) { drawSecond(dc, clock.sec); }
     }
 
     private function drawStatus(dc as Graphics.Dc) as Void {
@@ -215,16 +229,12 @@ class GarminFaceView extends WatchUi.WatchFace {
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
-    function onPartialUpdate(dc as Graphics.Dc) as Void {
-        if (_frame != null) { drawSecond(dc, System.getClockTime().sec); }
-    }
-
     private function drawSecond(dc as Graphics.Dc, second as Lang.Number) as Void {
         if (_lastSecond == second) { return; }
         if (_analog) {
             AnalogSeconds.draw(dc, second, _lastSecond, _frame);
         } else {
-            DigitalSeconds.draw(dc, _secondsX, _secondsY, _secondsTop, _secondsWidth, second);
+            DigitalSeconds.draw(dc, _secondsX, _secondsY, _secondsTop, _secondsWidth, second, _lastSecond);
         }
         _lastSecond = second;
     }
