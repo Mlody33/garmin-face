@@ -3,17 +3,17 @@
 ## Current solar-data source
 
 Solar times use Garmin's dated `Weather.getSunrise/getSunset` API and the
-observation location supplied by Garmin's cached weather. This restores
+last position supplied by `Position.getInfo()`, independently of weather location. This preserves
 previous-day comparisons and the exact sunset-to-next-sunrise night interval.
 Labels and comparisons round both event times up to whole minutes; arc progress
 uses the original absolute timestamps, including across midnight and DST.
-The `Positioning` permission is required to read the weather observation location.
-There is no `Position.getInfo`, GPS activation, custom astronomical algorithm or
-coordinate persistence. The old `SolarPosition` module remains removed, and old
-saved coordinates are deleted at startup. Missing weather location clears solar
-data rather than reusing stored coordinates. All 38 tests passed, including dated
-next-day sunrise, rounded comparisons, midnight continuity, DST, missing-location
-recovery and the weather-location integration.
+The existing `Positioning` permission permits this passive read. The lightweight
+`SolarPosition` module retains the last valid device position in RAM only; it does
+not start GPS, persist coordinates or fall back to the weather location. Old saved
+coordinates are still deleted at startup. With no device position, solar data is
+unavailable rather than calculated for a substitute location. Regression tests
+cover dated next-day sunrise, rounded comparisons, midnight, DST, position-cache
+recovery and independence from the weather observation location.
 The measurements below describe the earlier implementation and have not been
 remeasured for this change.
 

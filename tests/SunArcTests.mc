@@ -229,7 +229,7 @@ function solarChangesUseRoundedMinutesForBothDays(logger as Test.Logger) as Lang
 }
 
 (:test)
-function solarCacheClearsWhenWeatherLocationDisappearsAndRecovers(logger as Test.Logger) as Lang.Boolean {
+function solarCacheClearsWithoutAnyPositionAndRecovers(logger as Test.Logger) as Lang.Boolean {
     var location = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
     var now = new Time.Moment(SolarTest.epoch(30, 12, 0));
     SolarTimes.refresh(now, location);
@@ -249,26 +249,93 @@ function solarCacheClearsWhenWeatherLocationDisappearsAndRecovers(logger as Test
 }
 
 (:test)
-function solarUsesOnlyTheLocationFromGarminWeather(logger as Test.Logger) as Lang.Boolean {
-    WeatherRow.invalidate();
-    var now = Time.now();
-    WeatherRow.refresh(now.value() / 60);
-    var conditions = Weather.getCurrentConditions();
-    var expected = conditions == null ? null : conditions.observationLocationPosition;
-    var actual = WeatherRow.location();
-    if (expected == null) {
-        Test.assert(actual == null);
-    } else {
-        Test.assert(actual != null);
-        var a = actual.toDegrees();
-        var b = expected.toDegrees();
-        Test.assertEqual(a[0], b[0]);
-        Test.assertEqual(a[1], b[1]);
+function solarUsesDevicePositionEvenWhenWeatherHasAnotherLocation(logger as Test.Logger) as Lang.Boolean {
+    var savedPosition = SolarPosition._last;
+    var savedWeather = WeatherRow._location;
+    try {
+        SolarPosition._last = null;
+        // Weather data must not silently substitute another location for solar events.
+        WeatherRow._location = new Position.Location({:latitude => 0, :longitude => 0, :format => :degrees});
+        var expected = Position.getInfo().position;
+        SunArc.invalidate();
+        SunArc.refresh(Time.now());
+        var actual = SolarTimes._location;
+        if (expected == null) {
+            Test.assert(actual == null);
+            Test.assert(SolarTimes.current() == null);
+        } else {
+            Test.assert(actual != null);
+            var a = actual.toDegrees();
+            var b = expected.toDegrees();
+            Test.assertEqual(a[0], b[0]);
+            Test.assertEqual(a[1], b[1]);
+        }
+        var interval = SolarTimes.current();
+        Test.assert(SunArc.currentDaylight() == (interval == null ? null : interval[2]));
+        logger.debug("DEVICE SOLAR: start=" + SolarTimes.eventText(interval == null ? null : interval[0])
+            + " end=" + SolarTimes.eventText(interval == null ? null : interval[1]));
+    } catch (ex) {
+        SolarPosition._last = savedPosition;
+        WeatherRow._location = savedWeather;
+        SunArc.invalidate();
+        throw ex;
     }
+    SolarPosition._last = savedPosition;
+    WeatherRow._location = savedWeather;
     SunArc.invalidate();
-    SunArc.refresh(now);
-    Test.assertEqual(SunArc.currentDaylight(), SolarTimes.current() == null ? null : SolarTimes.current()[2]);
-    logger.debug("WEATHER SOLAR: start=" + SolarTimes.eventText(SolarTimes.current() == null ? null : SolarTimes.current()[0])
-        + " end=" + SolarTimes.eventText(SolarTimes.current() == null ? null : SolarTimes.current()[1]));
+    return true;
+}
+
+(:test)
+function solarPositionKeepsLastDeviceFixAndAcceptsANewerOne(logger as Test.Logger) as Lang.Boolean {
+    var saved = SolarPosition._last;
+    try {
+        SolarPosition._last = null;
+        Test.assert(SolarPosition.retain(null) == null);
+        var first = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
+        var newer = new Position.Location({:latitude => 50.0647, :longitude => 19.9450, :format => :degrees});
+        Test.assert(SolarPosition.retain(first) == first);
+        Test.assert(SolarPosition.retain(null) == first);
+        Test.assert(SolarPosition.retain(newer) == newer);
+        Test.assert(SolarPosition.retain(null) == newer);
+    } catch (ex) {
+        SolarPosition._last = saved;
+        throw ex;
+    }
+    SolarPosition._last = saved;
+    return true;
+}
+
+(:test)
+function solarRetainedDeviceFixFeedsCorrectDatedEvents(logger as Test.Logger) as Lang.Boolean {
+    var saved = SolarPosition._last;
+    try {
+        var retained = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
+        SolarPosition.retain(retained);
+        var latest = Position.getInfo().position;
+        var expected = latest == null ? retained : latest;
+        var date = new Time.Moment(SolarTest.epoch(29, 12, 0));
+        SunArc.invalidate();
+        SunArc.refresh(date);
+        var interval = SolarTimes.current();
+        Test.assert(interval != null);
+        var events = SolarTimes.eventsAround(SolarTimes.dateAnchor(date, expected), expected);
+        var selected = SolarTimes.intervalAt(date.value(), events);
+        Test.assert(selected != null);
+        Test.assertEqual(interval[0], selected[0]);
+        Test.assertEqual(interval[1], selected[1]);
+        Test.assertEqual(interval[2], selected[2]);
+        // The simulator currently exposes no live fix: check the retained-position path.
+        if (latest == null) {
+            Test.assertEqual(SolarTimes.eventLabel(interval[0], true), "06:24 +2");
+            Test.assertEqual(SolarTimes.eventLabel(interval[1], false), "16:17 -2");
+        }
+    } catch (ex) {
+        SolarPosition._last = saved;
+        SunArc.invalidate();
+        throw ex;
+    }
+    SolarPosition._last = saved;
+    SunArc.invalidate();
     return true;
 }

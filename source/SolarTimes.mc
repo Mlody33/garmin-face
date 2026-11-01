@@ -5,7 +5,7 @@ import Toybox.Time;
 import Toybox.Time.Gregorian;
 import Toybox.Weather;
 
-// Dated events come from Garmin Weather using its observation location.
+// Dated events come from Garmin Weather using the device's last known position.
 // Retain coordinates in RAM only; never activate GPS or estimate a night as 24 hours.
 module SolarTimes {
     var _events as Lang.Array<[Lang.Number, Lang.Boolean]> = [];

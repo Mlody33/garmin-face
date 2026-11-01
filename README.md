@@ -21,9 +21,11 @@ or later. Includes English and Polish translations.
   and solar labels.
 
 Weather uses Garmin's cached data. Sunrise and sunset come from Garmin's
-`Weather.getSunrise/getSunset` API for the observation location supplied with
-that weather. Missing values appear as `--` or `--:--`. Coordinates are kept only
-in memory; the face does not start GPS or a separate heart-rate sensor session,
+`Weather.getSunrise/getSunset` API for the last position supplied by the watch
+through `Position.getInfo()`. Solar data does not use the weather observation
+location. The last valid device position is retained in RAM; before one is
+available, solar labels show `--:--`. Other missing values appear as `--`.
+Coordinates are kept only in memory; the face does not start GPS or a separate heart-rate sensor session,
 make network requests or run a background service.
 In low-power mode, the display updates once per minute.
 Seconds, metric icons, progress arcs and solar labels are hidden until the face

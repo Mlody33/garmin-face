@@ -4,9 +4,9 @@ import Toybox.Lang;
 module ProgressArc {
     const SWEEP = 72;
     const STROKE_WIDTH = 3;
-    const EDGE_INSET = 4;
-    // Three-pixel strokes with a two-pixel gap between the bottom arcs.
-    const ACTIVE_MINUTES_INSET = 5;
+    const EDGE_INSET = 6;
+    // Keep the same radial thickness and a two-pixel gap for all goal arcs.
+    const ACTIVE_MINUTES_INSET = STROKE_WIDTH + 2;
 
     function goalProgress(value as Lang.Number or Null, goal as Lang.Number or Null) as Lang.Float or Null {
         if (value == null || value < 0 || goal == null || goal <= 0) { return null; }
@@ -33,13 +33,16 @@ module ProgressArc {
         dc.setAntiAlias(true);
         dc.setPenWidth(STROKE_WIDTH);
         dc.setColor(FaceColors.track(), FaceColors.background());
-        dc.drawArc(x, y, radius, direction, start, start + sign * SWEEP);
+        // Normalize both halves to the same native drawing direction.
+        dc.drawArc(x, y, radius, Graphics.ARC_CLOCKWISE,
+            sign > 0 ? start + SWEEP : start, sign > 0 ? start : start - SWEEP);
         var fill = sweep(progress);
         if (fill > 0) {
             var color = isGoal && progress != null && progress >= 1.0
                 ? FaceColors.completedGoal() : FaceColors.getDisplayColor();
             dc.setColor(color, FaceColors.background());
-            dc.drawArc(x, y, radius, direction, start, start + sign * fill);
+            dc.drawArc(x, y, radius, Graphics.ARC_CLOCKWISE,
+                sign > 0 ? start + fill : start, sign > 0 ? start : start - fill);
         }
         dc.setPenWidth(1);
         dc.setAntiAlias(false);

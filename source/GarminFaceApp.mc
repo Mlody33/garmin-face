@@ -8,7 +8,7 @@ class GarminFaceApp extends Application.AppBase {
     }
 
     function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
-        // Remove coordinates retained by the former location-based solar path.
+        // Remove coordinates saved by legacy versions; the current cache is RAM only.
         Storage.deleteValue("solarPosition");
         MetricFields.load();
         FaceColors.load();

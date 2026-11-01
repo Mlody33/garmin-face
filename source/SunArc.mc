@@ -17,7 +17,7 @@ module SunArc {
         var stamp = now.value() / 60;
         if (_stamp == stamp) { return; }
         _stamp = stamp;
-        SolarTimes.refresh(now, WeatherRow.location());
+        SolarTimes.refresh(now, SolarPosition.resolve());
     }
 
     function currentProgress(now as Lang.Number) as Lang.Float or Null {
