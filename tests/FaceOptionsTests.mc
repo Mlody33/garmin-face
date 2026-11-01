@@ -25,8 +25,8 @@ function simpleViewDefaultsAndPersistsWithoutChangingOtherSettings(logger as Tes
         FaceOptions.saveSimpleView(false);
         FaceOptions.load();
         Test.assert(!FaceOptions.simpleView());
-        Test.assertEqual(Storage.getValue(FaceColors.KEY), accent);
-        Test.assertEqual(Storage.getValue(MetricFields.key(0)), metric);
+        TestStorage.assertEqual(Storage.getValue(FaceColors.KEY), accent);
+        TestStorage.assertEqual(Storage.getValue(MetricFields.key(0)), metric);
     } catch (ex) {
         TestStorage.restore([FaceOptions.KEY], previous);
         throw ex;
@@ -56,9 +56,9 @@ function lightBackgroundDefaultsAndPersistsIndependently(logger as Test.Logger) 
         Test.assert(FaceOptions.lightBackground());
         FaceOptions.load();
         Test.assert(FaceOptions.lightBackground());
-        Test.assertEqual(Storage.getValue(FaceOptions.KEY), simple);
-        Test.assertEqual(Storage.getValue(FaceColors.KEY), accent);
-        Test.assertEqual(Storage.getValue(MetricFields.key(0)), metric);
+        TestStorage.assertEqual(Storage.getValue(FaceOptions.KEY), simple);
+        TestStorage.assertEqual(Storage.getValue(FaceColors.KEY), accent);
+        TestStorage.assertEqual(Storage.getValue(MetricFields.key(0)), metric);
         FaceOptions.saveLightBackground(false);
         FaceOptions.load();
         Test.assert(!FaceOptions.lightBackground());

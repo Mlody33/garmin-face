@@ -5,8 +5,11 @@
 Solar times use Garmin's dated `Weather.getSunrise/getSunset` API and the
 last position supplied by `Position.getInfo()`, independently of weather location. This preserves
 previous-day comparisons and the exact sunset-to-next-sunrise night interval.
-Labels and comparisons round both event times up to whole minutes; arc progress
-uses the original absolute timestamps, including across midnight and DST.
+Labels round each event time up to a whole minute. This matched all six native
+readings supplied for 31 October–2 November in the simulator comparison; the
+31-second threshold matched only three. Comparisons subtract these displayed
+times. Arc progress keeps the original timestamps, including
+across midnight and DST.
 The existing `Positioning` permission permits this passive read. The lightweight
 `SolarPosition` module retains the last valid device position in RAM only; it does
 not start GPS, persist coordinates or fall back to the weather location. Old saved
@@ -16,6 +19,26 @@ cover dated next-day sunrise, rounded comparisons, midnight, DST, position-cache
 recovery and independence from the weather observation location.
 The measurements below describe the earlier implementation and have not been
 remeasured for this change.
+
+### Three-day native reference
+
+On 1 November, the simulator's device position and weather position returned the
+same raw event times. Ceiling each event to a whole minute matched all six
+user-supplied native-watch readings; truncation matched none, and the 31-second
+threshold matched three. This checks the supplied reference, not every Garmin
+firmware or location.
+
+| Date (2026, CET) | Raw sunrise | Raw sunset | Displayed sunrise | Displayed sunset |
+| --- | --- | --- | --- | --- |
+| 31 October | 06:25:51 | 16:18:50 | 06:26 | 16:19 |
+| 1 November | 06:27:33 | 16:17:02 | 06:28 | 16:18 |
+| 2 November | 06:29:15 | 16:15:15 | 06:30 | 16:16 |
+
+Subtract the displayed minutes separately for sunrise and sunset. Thus 1 November
+is `+2/-1`, and 2 November is `+2/-2`. After sunset on 1 November the selected
+interval remains today's sunset to tomorrow's sunrise: `16:18 -1` to `06:30 +2`.
+The permanent regression test uses these raw event fixtures, not hardcoded
+production times. Production events continue to come from Garmin's dated API.
 
 ## Audit baseline
 

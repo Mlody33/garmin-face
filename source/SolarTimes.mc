@@ -96,22 +96,30 @@ module SolarTimes {
         return info.hour * 60 + info.min;
     }
 
-    // Compare the rounded local minutes actually displayed on consecutive calendar days.
-    // The previous event may belong to yesterday or two days ago for a night interval.
-    function changeMinutes(timestamp as Lang.Number, sunrise as Lang.Boolean,
+    // Select the same kind of event on the previous local calendar day.
+    function previousEvent(timestamp as Lang.Number, sunrise as Lang.Boolean,
             events as Lang.Array<[Lang.Number, Lang.Boolean]>, location as Position.Location) as Lang.Number or Null {
         var previousDay = dateAnchor(new Time.Moment(timestamp), location).value() - 86400;
         for (var i = 0; i < events.size(); i += 1) {
             var event = events[i];
             if (event[1] != sunrise || event[0] >= timestamp) { continue; }
             if (dateAnchor(new Time.Moment(event[0]), location).value() != previousDay) { continue; }
-            var difference = localMinute(timestamp, location) - localMinute(event[0], location);
-            // A solar event crossing local midnight still shifts by only a few minutes.
-            if (difference > 720) { difference -= 1440; }
-            else if (difference < -720) { difference += 1440; }
-            return difference;
+            return event[0];
         }
         return null;
+    }
+
+    // Compare both displayed times after rounding each event up to a whole minute.
+    // The previous event may belong to yesterday or two days ago for a night interval.
+    function changeMinutes(timestamp as Lang.Number, sunrise as Lang.Boolean,
+            events as Lang.Array<[Lang.Number, Lang.Boolean]>, location as Position.Location) as Lang.Number or Null {
+        var previous = previousEvent(timestamp, sunrise, events, location);
+        if (previous == null) { return null; }
+        var difference = localMinute(timestamp, location) - localMinute(previous, location);
+        // A solar event crossing local midnight still shifts by only a few minutes.
+        if (difference > 720) { difference -= 1440; }
+        else if (difference < -720) { difference += 1440; }
+        return difference;
     }
 
     function eventLabel(timestamp as Lang.Number or Null, sunrise as Lang.Boolean) as Lang.String {
@@ -129,7 +137,7 @@ module SolarTimes {
 
     function eventText(timestamp as Lang.Number or Null) as Lang.String {
         if (timestamp == null) { return "--:--"; }
-        // Round labels up, retaining exact timestamps for progress and interval selection.
+        // Round labels up; exact timestamps still drive progress and date selection.
         var event = roundedEvent(timestamp);
         var local = _location == null ? null : Gregorian.localMoment(_location as Position.Location, event);
         var info = local == null ? Gregorian.info(event, Time.FORMAT_SHORT) : Gregorian.info(local, Time.FORMAT_SHORT);

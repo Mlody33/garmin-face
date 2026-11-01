@@ -26,7 +26,7 @@ function accentPersistsAndMigratesPreviousClockColor(logger as Test.Logger) as L
         FaceColors.load();
         Test.assertEqual(FaceColors.get(), Graphics.COLOR_BLUE);
         Test.assertEqual(FaceColors.getDisplayColor(), 0x55AAFF);
-        Test.assertEqual(Storage.getValue(MetricFields.key(0)), savedMetric);
+        TestStorage.assertEqual(Storage.getValue(MetricFields.key(0)), savedMetric);
         Test.assert(!FaceColors.save(Graphics.COLOR_BLACK));
         FaceColors.load();
         Test.assertEqual(FaceColors.get(), Graphics.COLOR_BLUE);

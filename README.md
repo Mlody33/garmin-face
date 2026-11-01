@@ -15,7 +15,8 @@ or later. Includes English and Polish translations.
 - Progress arcs for daily steps, weekly intensity minutes and the current day
   or night. After sunset, the top arc tracks the night until the next sunrise.
   Solar labels show each endpoint and its change in minutes from the previous day.
-  Times are rounded up to whole minutes before display and comparison.
+  Each event time rounds up to the next whole minute, matching the checked native
+  Garmin readings. Day-to-day changes compare these displayed times.
   Each bottom goal arc turns green when its target is reached.
 - Accent colours, a light background and a simple view that hides the arcs
   and solar labels.
