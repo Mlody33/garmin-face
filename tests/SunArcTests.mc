@@ -134,10 +134,10 @@ function solarNativeApiReturnsDatedNextDaySunrise(logger as Test.Logger) as Lang
     var current = SolarTimes.current();
     Test.assert(current != null);
     Test.assertEqual(current[1], tomorrowRise.value());
-    Test.assertEqual(SolarTimes.eventText(current[0]), "16:16");
-    Test.assertEqual(SolarTimes.eventText(current[1]), "06:25");
-    Test.assertEqual(SolarTimes.eventLabel(current[0], false), "16:16 -2");
-    Test.assertEqual(SolarTimes.eventLabel(current[1], true), "06:25 +2");
+    Test.assertEqual(SolarTimes.eventText(current[0]), "16:17");
+    Test.assertEqual(SolarTimes.eventText(current[1]), "06:26");
+    Test.assertEqual(SolarTimes.eventLabel(current[0], false), "16:17 -2");
+    Test.assertEqual(SolarTimes.eventLabel(current[1], true), "06:26 +2");
     logger.debug("DATED SOLAR: today rise=" + todayRise.value() + " tomorrow rise=" + tomorrowRise.value());
     return true;
 }
@@ -151,18 +151,6 @@ function solarCalendarAnchorHandlesLocalDateAndDst(logger as Test.Logger) as Lan
     Test.assertEqual(anchor.month, 3);
     Test.assertEqual(anchor.day, 29);
     Test.assertEqual(anchor.hour, 12);
-    return true;
-}
-
-(:test)
-function solarPositionValidatesPersistedCoordinates(logger as Test.Logger) as Lang.Boolean {
-    Test.assert(SolarPosition.validCoordinates([52.2297, 21.0122]));
-    Test.assert(SolarPosition.validCoordinates([0, 0]));
-    Test.assert(!SolarPosition.validCoordinates(null));
-    Test.assert(!SolarPosition.validCoordinates([91, 21]));
-    Test.assert(!SolarPosition.validCoordinates([52, -181]));
-    Test.assert(!SolarPosition.validCoordinates(["52", "21"]));
-    Test.assert(!SolarPosition.validCoordinates([52]));
     return true;
 }
 
@@ -198,5 +186,89 @@ function solarChangesFollowDisplayedMinutesAndHandleDst(logger as Test.Logger) a
     Test.assertEqual(SolarTimes.changeMinutes(current, false, [[previous, false]], warsaw), -62);
     Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18) + 59, false,
         [[SolarTest.epoch(28, 15, 18) + 1, false]], warsaw), 0);
+    return true;
+}
+
+(:test)
+function solarLabelsRoundUpAcrossMidnightWithoutChangingProgress(logger as Test.Logger) as Lang.Boolean {
+    var warsaw = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
+    SolarTimes.refresh(new Time.Moment(SolarTest.epoch(30, 12, 0)), warsaw);
+    var interval = SolarTimes.current();
+    Test.assert(interval != null);
+    var start = interval[0];
+    var end = interval[1];
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 25) + 58), "06:26");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 15, 18) + 59), "16:19");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 27) + 86400 + 40), "06:28");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 15, 17) + 86400 + 11), "16:18");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28)), "06:28");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 22, 59) + 1), "00:00");
+    Test.assertEqual(SolarTimes.current()[0], start);
+    Test.assertEqual(SolarTimes.current()[1], end);
+    return true;
+}
+
+(:test)
+function solarChangesUseRoundedMinutesForBothDays(logger as Test.Logger) as Lang.Boolean {
+    var warsaw = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
+    var previousRise = SolarTest.epoch(31, 5, 25) + 58;
+    var currentRise = SolarTest.epoch(31, 5, 27) + 86400 + 40;
+    var previousSet = SolarTest.epoch(31, 15, 18) + 59;
+    var currentSet = SolarTest.epoch(31, 15, 17) + 86400 + 11;
+    var events = [[previousRise, true], [previousSet, false], [currentRise, true], [currentSet, false]];
+    Test.assertEqual(SolarTimes.changeMinutes(currentRise, true, events, warsaw), 2);
+    Test.assertEqual(SolarTimes.changeMinutes(currentSet, false, events, warsaw), -1);
+    // Displayed 16:21 -> 16:20 is -1, regardless of seconds within those minutes.
+    Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 19) + 7, false,
+        [[SolarTest.epoch(28, 15, 20) + 55, false]], warsaw), -1);
+    Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18) + 29, false,
+        [[SolarTest.epoch(28, 15, 18), false]], warsaw), 1);
+    Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18), false,
+        [[SolarTest.epoch(28, 15, 18) + 30, false]], warsaw), -1);
+    return true;
+}
+
+(:test)
+function solarCacheClearsWhenWeatherLocationDisappearsAndRecovers(logger as Test.Logger) as Lang.Boolean {
+    var location = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
+    var now = new Time.Moment(SolarTest.epoch(30, 12, 0));
+    SolarTimes.refresh(now, location);
+    var revision = SolarTimes.revision();
+    Test.assert(SolarTimes.current() != null);
+    SolarTimes.refresh(now, location);
+    Test.assertEqual(SolarTimes.revision(), revision);
+    SolarTimes.refresh(now, null);
+    Test.assert(SolarTimes.current() == null);
+    Test.assertEqual(SolarTimes.eventLabel(null, true), "--:--");
+    Test.assert(SolarTimes.revision() > revision);
+    revision = SolarTimes.revision();
+    SolarTimes.refresh(now, location);
+    Test.assert(SolarTimes.current() != null);
+    Test.assert(SolarTimes.revision() > revision);
+    return true;
+}
+
+(:test)
+function solarUsesOnlyTheLocationFromGarminWeather(logger as Test.Logger) as Lang.Boolean {
+    WeatherRow.invalidate();
+    var now = Time.now();
+    WeatherRow.refresh(now.value() / 60);
+    var conditions = Weather.getCurrentConditions();
+    var expected = conditions == null ? null : conditions.observationLocationPosition;
+    var actual = WeatherRow.location();
+    if (expected == null) {
+        Test.assert(actual == null);
+    } else {
+        Test.assert(actual != null);
+        var a = actual.toDegrees();
+        var b = expected.toDegrees();
+        Test.assertEqual(a[0], b[0]);
+        Test.assertEqual(a[1], b[1]);
+    }
+    SunArc.invalidate();
+    SunArc.refresh(now);
+    Test.assertEqual(SunArc.currentDaylight(), SolarTimes.current() == null ? null : SolarTimes.current()[2]);
+    logger.debug("WEATHER SOLAR: start=" + SolarTimes.eventText(SolarTimes.current() == null ? null : SolarTimes.current()[0])
+        + " end=" + SolarTimes.eventText(SolarTimes.current() == null ? null : SolarTimes.current()[1]));
     return true;
 }

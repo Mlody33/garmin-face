@@ -1,7 +1,7 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 
-// Rasterize only ten digits, once per theme. The partial-update path allocates nothing.
+// Rasterize ten digits once per theme, then draw over the restored full scene.
 module DigitalSeconds {
     var _digits as Lang.Array<Graphics.BufferedBitmap> = [];
     var _background as Lang.Number = -2;
@@ -51,29 +51,19 @@ module DigitalSeconds {
     }
 
     function draw(dc as Graphics.Dc, x as Lang.Number, y as Lang.Number,
-                  top as Lang.Number, width as Lang.Number, second as Lang.Number,
-                  previous as Lang.Number) as Void {
-        // Opaque digit tiles also erase the previous glyph. Keep the tens digit
-        // and surrounding pixels untouched on nine out of ten ordinary ticks.
-        // Compare actual values so skipped ticks and 59 -> 00 remain correct.
-        if (_canRasterize && previous >= 0 && previous / 10 == second / 10) {
-            dc.setClip(x + _digitWidth, top, _digitWidth, _height);
-            dc.drawBitmap(x + _digitWidth, top, _digits[second % 10]);
-            dc.clearClip();
-            return;
-        }
-        dc.setClip(x - 1, top, width, _height);
-        dc.setColor(_background, _background);
-        dc.fillRectangle(x - 1, top, width, _height);
+                  top as Lang.Number, width as Lang.Number, second as Lang.Number) as Void {
+        // onUpdate has already restored every pixel from the scene bitmap.
+        // The opaque tiles need no extra erase or clipping operations.
         if (_canRasterize) {
             dc.drawBitmap(x, top, _digits[second / 10]);
             dc.drawBitmap(x + _digitWidth, top, _digits[second % 10]);
         } else {
             // Preserve native spacing for a proportional fallback font.
-            dc.setColor(_foreground, _background);
+            dc.setClip(x - 1, top, width, _height);
+            dc.setColor(_foreground, Graphics.COLOR_TRANSPARENT);
             dc.drawText(x, y, _font as Graphics.FontType, _text[second],
                 Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+            dc.clearClip();
         }
-        dc.clearClip();
     }
 }

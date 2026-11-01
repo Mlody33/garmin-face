@@ -95,7 +95,10 @@ module MetricFields {
             case STEPS: return activity == null ? null : activity.steps;
             case CALORIES: return activity == null ? null : activity.calories;
             case STRESS: return activity != null && activity has :stressScore ? activity.stressScore : null;
-            case BATTERY: return System.getSystemStats().battery;
+            case BATTERY:
+                // Only whole percent is displayed; sub-percent changes need no formatting.
+                var battery = System.getSystemStats().battery;
+                return battery >= 0 && battery <= 100 ? battery.toNumber() : null;
             case DISTANCE: return activity == null ? null : activity.distance;
             case FLOORS: return activity == null ? null : activity.floorsClimbed;
             case HEART_RATE:

@@ -3,7 +3,7 @@ import Toybox.Lang;
 import Toybox.Test;
 
 (:test)
-function digitalSecondsRenderAllTransitionsAndRebuildForDifferentFonts(logger as Test.Logger) as Lang.Boolean {
+function digitalSecondsRenderAllValuesAndRebuildForDifferentFonts(logger as Test.Logger) as Lang.Boolean {
     var bitmap = Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap;
     var dc = bitmap.getDc();
     var fonts = [FaceFonts.seconds(), Graphics.FONT_XTINY, FaceFonts.text(), FaceFonts.seconds()];
@@ -26,15 +26,12 @@ function digitalSecondsRenderAllTransitionsAndRebuildForDifferentFonts(logger as
                 Test.assertEqual(DigitalSeconds._text.size(), 60);
             }
             for (var second = 0; second < 60; second += 1) {
-                // A complete repaint has no previous second.
-                DigitalSeconds.draw(dc, 10, height / 2, 0, width, second, -1);
-                // Includes every ordinary transition, wrap and arbitrary skipped tick.
-                for (var previous = 0; previous < 60; previous += 1) {
-                    DigitalSeconds.draw(dc, 10, height / 2, 0, width, previous, -1);
-                    DigitalSeconds.draw(dc, 10, height / 2, 0, width, second, previous);
-                }
+                // Every production update restores the complete scene first.
+                dc.setColor(background, background);
+                dc.clear();
+                DigitalSeconds.draw(dc, 10, height / 2, 0, width, second);
             }
-            logger.debug("DIGITAL transitions light=" + light + " font=" + f + " atlas=" + DigitalSeconds._canRasterize);
+            logger.debug("DIGITAL values light=" + light + " font=" + f + " atlas=" + DigitalSeconds._canRasterize);
         }
     }
     return true;

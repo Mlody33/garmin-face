@@ -6,7 +6,7 @@ import Toybox.Time;
 
 (:test)
 function renderCacheReusesUnchangedSceneAndInvalidatesSettingsAndReturn(logger as Test.Logger) as Lang.Boolean {
-    var keys = [FaceOptions.KEY, FaceOptions.LIGHT_BACKGROUND_KEY, FaceOptions.ANALOG_SECONDS_KEY,
+    var keys = [FaceOptions.KEY, FaceOptions.LIGHT_BACKGROUND_KEY,
         MetricFields.key(0), MetricFields.key(1), MetricFields.key(2), FaceColors.KEY];
     var previous = [];
     for (var i = 0; i < keys.size(); i += 1) { previous.add(Storage.getValue(keys[i])); }
@@ -14,7 +14,6 @@ function renderCacheReusesUnchangedSceneAndInvalidatesSettingsAndReturn(logger a
         var bitmap = Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap;
         var dc = bitmap.getDc();
         FaceOptions.saveSimpleView(true);
-        FaceOptions.saveAnalogSeconds(true);
         FaceOptions.saveLightBackground(false);
         for (var slot = 0; slot < 3; slot += 1) { MetricFields.save(slot, MetricFields.NONE); }
         FaceColors.save(Graphics.COLOR_WHITE);
@@ -33,10 +32,6 @@ function renderCacheReusesUnchangedSceneAndInvalidatesSettingsAndReturn(logger a
         view.onUpdate(dc);
         Test.assertEqual(view.renderCount(), count + 1);
         count = view.renderCount();
-        FaceOptions.saveAnalogSeconds(false);
-        view.onUpdate(dc);
-        Test.assertEqual(view.renderCount(), count + 1);
-        count = view.renderCount();
         FaceOptions.saveSimpleView(false);
         view.onUpdate(dc);
         Test.assertEqual(view.renderCount(), count + 1);
@@ -52,7 +47,7 @@ function renderCacheReusesUnchangedSceneAndInvalidatesSettingsAndReturn(logger a
         view.onShow();
         view.onUpdate(dc);
         Test.assertEqual(view.renderCount(), count + 1);
-        logger.debug("CACHE invalidation and both seconds modes rendered successfully");
+        logger.debug("CACHE invalidation and digital seconds rendered successfully");
     } catch (ex) {
         TestStorage.restore(keys, previous);
         throw ex;

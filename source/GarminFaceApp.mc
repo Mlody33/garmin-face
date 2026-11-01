@@ -1,4 +1,5 @@
 import Toybox.Application;
+import Toybox.Application.Storage;
 import Toybox.WatchUi;
 
 class GarminFaceApp extends Application.AppBase {
@@ -7,6 +8,8 @@ class GarminFaceApp extends Application.AppBase {
     }
 
     function getInitialView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] {
+        // Remove coordinates retained by the former location-based solar path.
+        Storage.deleteValue("solarPosition");
         MetricFields.load();
         FaceColors.load();
         FaceOptions.load();

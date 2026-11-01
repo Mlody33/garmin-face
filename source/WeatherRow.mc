@@ -4,16 +4,20 @@ import Toybox.Math;
 import Toybox.Position;
 import Toybox.Weather;
 
-// Current temperature and conditions from Garmin's cached weather.
+// Current and feels-like temperatures from the same cached weather reading.
 module WeatherRow {
+    const MAX_ROW_WIDTH = 220;
+    const WEATHER_WIDTH = 38; // 14 px gap and 24 px icon/spacing.
     var _dateText as Lang.String = "";
     var _temperatureText as Lang.String = "";
     var _dateWidth as Lang.Number = 0;
     var _temperatureWidth as Lang.Number = 0;
     var _stamp as Lang.Number = -1;
     var _condition as Lang.Number or Null = null;
-    var _currentTemperature as Lang.String = "--°";
     var _location as Position.Location or Null = null;
+    var _currentTemperature as Lang.String = "--°/--°";
+    var _font as Graphics.FontType = Graphics.FONT_GLANCE;
+    var _compactFont as Graphics.FontType or Null = null;
 
     function invalidate() as Void { _stamp = -1; }
 
@@ -21,26 +25,37 @@ module WeatherRow {
         if (_stamp == stamp) { return; }
         _stamp = stamp;
         var conditions = Weather.getCurrentConditions();
-        _currentTemperature = conditions == null ? "--°" : temperatureText(conditions.temperature);
+        _currentTemperature = conditions == null ? temperaturesText(null, null)
+            : temperaturesText(conditions.temperature, conditions.feelsLikeTemperature);
         _condition = conditions == null ? null : conditions.condition;
         _location = conditions == null ? null : conditions.observationLocationPosition;
     }
 
+    // Use Garmin's cached weather location only; never request a GPS fix.
     function location() as Position.Location or Null { return _location; }
 
     function draw(dc as Graphics.Dc, centerX as Lang.Number, y as Lang.Number,
                   dateText as Lang.String) as Void {
         var text = _currentTemperature;
 
-        var font = FaceFonts.text();
-        if (!text.equals(_temperatureText)) {
+        if (!text.equals(_temperatureText) || !dateText.equals(_dateText)) {
             _temperatureText = text;
-            _temperatureWidth = dc.getTextWidthInPixels(text, font);
-        }
-        if (!dateText.equals(_dateText)) {
             _dateText = dateText;
-            _dateWidth = dc.getTextWidthInPixels(dateText, font);
+            _font = FaceFonts.text();
+            _temperatureWidth = dc.getTextWidthInPixels(text, _font);
+            _dateWidth = dc.getTextWidthInPixels(dateText, _font);
+            // Long dates and negative temperatures must fit the round display.
+            if (_dateWidth + WEATHER_WIDTH + _temperatureWidth > MAX_ROW_WIDTH) {
+                if (_compactFont == null) {
+                    _compactFont = Graphics.getVectorFont({:face => "RobotoCondensedBold", :size => 22});
+                    if (_compactFont == null) { _compactFont = Graphics.FONT_XTINY; }
+                }
+                _font = _compactFont as Graphics.FontType;
+                _temperatureWidth = dc.getTextWidthInPixels(text, _font);
+                _dateWidth = dc.getTextWidthInPixels(dateText, _font);
+            }
         }
+        var font = _font;
         var gap = 14;
         var rowLeft = centerX - (_dateWidth + gap + 24 + _temperatureWidth) / 2;
         dc.setColor(FaceColors.secondary(), FaceColors.background());
@@ -59,9 +74,18 @@ module WeatherRow {
         return Math.round(value).toNumber().toString() + "°";
     }
 
+    function temperaturesText(temperature as Lang.Numeric or Null,
+                              feelsLike as Lang.Numeric or Null) as Lang.String {
+        return temperatureText(temperature) + "/" + temperatureText(feelsLike);
+    }
+
     function drawIcon(dc as Graphics.Dc, x as Lang.Number,
                       y as Lang.Number, condition as Lang.Number or Null) as Void {
         // Draw vector shapes: no dependence on emoji or weather-font glyphs.
+        if (condition == null) {
+            dc.drawLine(x - 5, y, x + 5, y);
+            return;
+        }
         switch (condition) {
             case Weather.CONDITION_CLEAR:
             case Weather.CONDITION_FAIR:

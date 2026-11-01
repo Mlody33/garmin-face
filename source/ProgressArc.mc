@@ -3,8 +3,10 @@ import Toybox.Lang;
 
 module ProgressArc {
     const SWEEP = 72;
-    // Four-pixel strokes with a two-pixel gap between the bottom arcs.
-    const ACTIVE_MINUTES_INSET = 6;
+    const STROKE_WIDTH = 3;
+    const EDGE_INSET = 4;
+    // Three-pixel strokes with a two-pixel gap between the bottom arcs.
+    const ACTIVE_MINUTES_INSET = 5;
 
     function goalProgress(value as Lang.Number or Null, goal as Lang.Number or Null) as Lang.Float or Null {
         if (value == null || value < 0 || goal == null || goal <= 0) { return null; }
@@ -21,20 +23,25 @@ module ProgressArc {
 
     function draw(dc as Graphics.Dc, start as Lang.Number,
                   direction as Graphics.ArcDirection, progress as Lang.Float or Null,
-                  inset as Lang.Number) as Void {
+                  inset as Lang.Number, isGoal as Lang.Boolean) as Void {
         if (FaceOptions.simpleView()) { return; }
         var x = dc.getWidth() / 2;
         var y = dc.getHeight() / 2;
-        var radius = x - 2 - inset;
+        var radius = x - EDGE_INSET - inset;
         var sign = direction == Graphics.ARC_CLOCKWISE ? -1 : 1;
-        dc.setPenWidth(4);
+        // The scene bitmap uses the full device palette, allowing native AA.
+        dc.setAntiAlias(true);
+        dc.setPenWidth(STROKE_WIDTH);
         dc.setColor(FaceColors.track(), FaceColors.background());
         dc.drawArc(x, y, radius, direction, start, start + sign * SWEEP);
         var fill = sweep(progress);
         if (fill > 0) {
-            dc.setColor(FaceColors.getDisplayColor(), FaceColors.background());
+            var color = isGoal && progress != null && progress >= 1.0
+                ? FaceColors.completedGoal() : FaceColors.getDisplayColor();
+            dc.setColor(color, FaceColors.background());
             dc.drawArc(x, y, radius, direction, start, start + sign * fill);
         }
         dc.setPenWidth(1);
+        dc.setAntiAlias(false);
     }
 }

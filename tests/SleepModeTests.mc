@@ -10,16 +10,16 @@ class SleepTestView extends GarminFaceView {
 }
 
 (:test)
-function secondsDisappearInSleepAndReturnAfterWakeForBothModes(logger as Test.Logger) as Lang.Boolean {
-    var keys = [FaceOptions.ANALOG_SECONDS_KEY, FaceOptions.LIGHT_BACKGROUND_KEY];
+function digitalSecondsDisappearInSleepAndReturnAfterWake(logger as Test.Logger) as Lang.Boolean {
+    var keys = [FaceOptions.KEY, FaceOptions.LIGHT_BACKGROUND_KEY];
     var previous = [Storage.getValue(keys[0]), Storage.getValue(keys[1])];
     try {
         var bitmap = Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap;
         var dc = bitmap.getDc();
         for (var light = 0; light < 2; light += 1) {
             FaceOptions.saveLightBackground(light == 1);
-            for (var analog = 0; analog < 2; analog += 1) {
-                FaceOptions.saveAnalogSeconds(analog == 1);
+            for (var simple = 0; simple < 2; simple += 1) {
+                FaceOptions.saveSimpleView(simple == 1);
                 var view = new SleepTestView();
                 view.onUpdate(dc);
                 Test.assert(view.lastDrawnSecond() >= 0);
@@ -27,7 +27,7 @@ function secondsDisappearInSleepAndReturnAfterWakeForBothModes(logger as Test.Lo
                     var renders = view.renderCount();
                     view.onEnterSleep();
                     view.onUpdate(dc);
-                    // Icons and solar labels are part of the cached scene.
+                    // Icons, arcs and solar labels are part of the cached scene.
                     Test.assertEqual(view.renderCount(), renders + 1);
                     Test.assertEqual(view.lastDrawnSecond(), -1);
                     // Returning from an overlay and minute updates must stay asleep.
@@ -35,8 +35,8 @@ function secondsDisappearInSleepAndReturnAfterWakeForBothModes(logger as Test.Lo
                     view.onUpdate(dc);
                     view.onUpdate(dc);
                     Test.assertEqual(view.lastDrawnSecond(), -1);
-                    // Switching seconds mode during sleep must not show either type.
-                    FaceOptions.saveAnalogSeconds(!FaceOptions.analogSeconds());
+                    // Changing the layout during sleep must not restore seconds.
+                    FaceOptions.saveSimpleView(!FaceOptions.simpleView());
                     view.onUpdate(dc);
                     Test.assertEqual(view.lastDrawnSecond(), -1);
                     renders = view.renderCount();

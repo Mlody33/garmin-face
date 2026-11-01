@@ -5,7 +5,8 @@ import Toybox.Time;
 import Toybox.Time.Gregorian;
 import Toybox.Weather;
 
-// Events carry absolute timestamps. No 24-hour approximation is used for a night.
+// Dated events come from Garmin Weather using its observation location.
+// Retain coordinates in RAM only; never activate GPS or estimate a night as 24 hours.
 module SolarTimes {
     var _events as Lang.Array<[Lang.Number, Lang.Boolean]> = [];
     var _interval as [Lang.Number, Lang.Number, Lang.Boolean] or Null = null;
@@ -83,14 +84,19 @@ module SolarTimes {
 
     function revision() as Lang.Number { return _revision; }
 
+    function roundedEvent(timestamp as Lang.Number) as Time.Moment {
+        var remainder = timestamp % 60;
+        return new Time.Moment(remainder == 0 ? timestamp : timestamp + 60 - remainder);
+    }
+
     function localMinute(timestamp as Lang.Number, location as Position.Location) as Lang.Number {
-        var event = new Time.Moment(timestamp);
+        var event = roundedEvent(timestamp);
         var local = Gregorian.localMoment(location, event);
         var info = local == null ? Gregorian.info(event, Time.FORMAT_SHORT) : Gregorian.info(local, Time.FORMAT_SHORT);
         return info.hour * 60 + info.min;
     }
 
-    // Compare displayed local times of the same event on consecutive calendar days.
+    // Compare the rounded local minutes actually displayed on consecutive calendar days.
     // The previous event may belong to yesterday or two days ago for a night interval.
     function changeMinutes(timestamp as Lang.Number, sunrise as Lang.Boolean,
             events as Lang.Array<[Lang.Number, Lang.Boolean]>, location as Position.Location) as Lang.Number or Null {
@@ -123,7 +129,8 @@ module SolarTimes {
 
     function eventText(timestamp as Lang.Number or Null) as Lang.String {
         if (timestamp == null) { return "--:--"; }
-        var event = new Time.Moment(timestamp);
+        // Round labels up, retaining exact timestamps for progress and interval selection.
+        var event = roundedEvent(timestamp);
         var local = _location == null ? null : Gregorian.localMoment(_location as Position.Location, event);
         var info = local == null ? Gregorian.info(event, Time.FORMAT_SHORT) : Gregorian.info(local, Time.FORMAT_SHORT);
         return info.hour.format("%02d") + ":" + info.min.format("%02d");

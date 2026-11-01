@@ -68,6 +68,10 @@ module FaceColors {
         return FaceOptions.lightBackground() ? Graphics.COLOR_LT_GRAY : Graphics.COLOR_DK_GRAY;
     }
 
+    function completedGoal() as Lang.Number {
+        return FaceOptions.lightBackground() ? 0x005500 : 0x00AA00;
+    }
+
     function displayColor(color as Lang.Number) as Lang.Number {
         // Softer shades using the MIP palette's 0x00/55/AA/FF channel levels.
         // White and gray keep their original neutral shades.

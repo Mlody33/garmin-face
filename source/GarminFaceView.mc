@@ -29,7 +29,6 @@ class GarminFaceView extends WatchUi.WatchFace {
     protected var _lastSecond as Lang.Number = -1;
     private var _sleeping as Lang.Boolean = false;
     private var _frameSleeping as Lang.Boolean = false;
-    private var _analog as Lang.Boolean = false;
     private var _simple as Lang.Boolean = false;
     private var _background as Lang.Number = Graphics.COLOR_BLACK;
     private var _secondary as Lang.Number = Graphics.COLOR_LT_GRAY;
@@ -51,7 +50,7 @@ class GarminFaceView extends WatchUi.WatchFace {
 
     function onEnterSleep() as Void {
         _sleeping = true;
-        // Repaint from the scene without seconds so the last digit/dot disappears.
+        // Repaint from the scene without seconds so the last digits disappear.
         WatchUi.requestUpdate();
     }
 
@@ -73,17 +72,14 @@ class GarminFaceView extends WatchUi.WatchFace {
         var clock = System.getClockTime();
         var settings = System.getDeviceSettings();
         var simple = FaceOptions.simpleView();
-        var analog = FaceOptions.analogSeconds();
+        var showArcs = !simple && !_sleeping;
         var background = FaceColors.background();
         var secondary = FaceColors.secondary();
         var accent = FaceColors.getDisplayColor();
         var dirty = _frame == null || _minuteStamp != stamp || _background != background
-            || _secondary != secondary || _accent != accent || _simple != simple || _analog != analog
+            || _secondary != secondary || _accent != accent || _simple != simple
             || _frameSleeping != _sleeping;
-        // Invalidate clock geometry immediately when the seconds layout changes.
-        if (_analog != analog) { _hour = -1; }
         _simple = simple;
-        _analog = analog;
         _background = background;
         _secondary = secondary;
         _accent = accent;
@@ -107,7 +103,7 @@ class GarminFaceView extends WatchUi.WatchFace {
         WeatherRow.refresh(stamp);
 
         var slots = MetricFields.visibleSlots();
-        var activity = !simple || MetricFields.needsActivity() ? ActivityMonitor.getInfo() : null;
+        var activity = showArcs || MetricFields.needsActivity() ? ActivityMonitor.getInfo() : null;
         for (var slot = 0; slot < FaceLayout.FIELD_COUNT; slot += 1) {
             var metric = MetricFields.get(slot);
             var changed = !_fields[slot].equals(metric);
@@ -132,7 +128,7 @@ class GarminFaceView extends WatchUi.WatchFace {
         var activeMinutesProgress = null;
         var sunProgress = null;
         var sunDaylight = null;
-        if (!simple) {
+        if (showArcs) {
             if (activity != null) {
                 stepProgress = ProgressArc.goalProgress(activity.steps, activity.stepGoal);
                 var minutes = activity.activeMinutesWeek;
@@ -163,7 +159,7 @@ class GarminFaceView extends WatchUi.WatchFace {
             target.clearClip();
             target.setColor(_secondary, _background);
             target.clear();
-            if (!simple) { SunArc.draw(target, sunProgress, !_sleeping); }
+            if (showArcs) { SunArc.draw(target, sunProgress); }
             WeatherRow.draw(target, FaceLayout.CENTER_X, FaceLayout.DATE_Y, _dateText);
             drawStatus(target);
             drawClock(target, clock);
@@ -175,16 +171,17 @@ class GarminFaceView extends WatchUi.WatchFace {
                 }
                 drawCentered(target, x, FaceLayout.FIELD_VALUE_Y, FaceFonts.text(), _values[slot], _secondary);
             }
-            ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, stepProgress, 0);
-            ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, activeMinutesProgress,
-                ProgressArc.ACTIVE_MINUTES_INSET);
+            if (showArcs) {
+                ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, stepProgress, 0, true);
+                ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, activeMinutesProgress,
+                    ProgressArc.ACTIVE_MINUTES_INSET, true);
+            }
             _minuteStamp = stamp;
             _frameSleeping = _sleeping;
             _renderCount += 1;
         }
         if (!_sleeping) {
-            if (analog) { AnalogSeconds.prepare(_background, _accent); }
-            else { DigitalSeconds.prepare(dc, _secondsFont as Graphics.FontType, _background, _secondary); }
+            DigitalSeconds.prepare(dc, _secondsFont as Graphics.FontType, _background, _secondary);
         }
         // Always repaint the whole display on onUpdate (overlays can invalidate it).
         dc.clearClip();
@@ -200,7 +197,7 @@ class GarminFaceView extends WatchUi.WatchFace {
     }
 
     private function drawClock(dc as Graphics.Dc, clock as System.ClockTime) as Void {
-        if (_secondsFont == null && !_analog) {
+        if (_secondsFont == null) {
             _secondsFont = FaceFonts.seconds();
             _secondsWidth = dc.getTextWidthInPixels("00", _secondsFont as Graphics.FontType) + 2;
             _secondsHeight = dc.getFontHeight(_secondsFont as Graphics.FontType) + 4;
@@ -213,8 +210,8 @@ class GarminFaceView extends WatchUi.WatchFace {
             _timeFont = Graphics.FONT_NUMBER_THAI_HOT;
             var hourWidth = dc.getTextWidthInPixels(_hourText, _timeFont);
             var width = hourWidth + 10 + dc.getTextWidthInPixels(_minuteText, _timeFont);
-            var secondsWidth = _analog ? 0 : _secondsWidth - 2;
-            var gap = _analog ? 0 : 5;
+            var secondsWidth = _secondsWidth - 2;
+            var gap = 5;
             if (width + gap + secondsWidth > 236) {
                 _timeFont = Graphics.FONT_NUMBER_HOT;
                 hourWidth = dc.getTextWidthInPixels(_hourText, _timeFont);
@@ -235,12 +232,7 @@ class GarminFaceView extends WatchUi.WatchFace {
     }
 
     private function drawSecond(dc as Graphics.Dc, second as Lang.Number) as Void {
-        if (_lastSecond == second) { return; }
-        if (_analog) {
-            AnalogSeconds.draw(dc, second, _lastSecond, _frame);
-        } else {
-            DigitalSeconds.draw(dc, _secondsX, _secondsY, _secondsTop, _secondsWidth, second, _lastSecond);
-        }
+        DigitalSeconds.draw(dc, _secondsX, _secondsY, _secondsTop, _secondsWidth, second);
         _lastSecond = second;
     }
 

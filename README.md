@@ -6,28 +6,34 @@ or later. Includes English and Polish translations.
 
 ## Features
 
-- 24-hour time with digital seconds or an orbiting dot. Seconds appear only while
+- 24-hour time with digital seconds. Seconds appear only while
   the face is awake and disappear in low-power mode.
-- Date, weather in °C, alarm status and phone connection status.
+- Date, actual/feels-like temperatures in °C (e.g. `8°/5°`), weather conditions,
+  alarm status and phone connection status.
 - Three configurable fields: steps, calories, stress, heart rate, battery,
   daily distance in kilometres or floors climbed. Fields can be repeated or hidden.
 - Progress arcs for daily steps, weekly intensity minutes and the current day
-  or night. Solar labels show sunrise/sunset and their change from the previous day.
+  or night. After sunset, the top arc tracks the night until the next sunrise.
+  Solar labels show each endpoint and its change in minutes from the previous day.
+  Times are rounded up to whole minutes before display and comparison.
+  Each bottom goal arc turns green when its target is reached.
 - Accent colours, a light background and a simple view that hides the arcs
   and solar labels.
 
-Weather uses Garmin's cached data. Solar times use the last available location;
-missing values appear as `--` or `--:--`. The face does not start GPS or a separate
-heart-rate sensor session, make network requests or run a background service.
+Weather uses Garmin's cached data. Sunrise and sunset come from Garmin's
+`Weather.getSunrise/getSunset` API for the observation location supplied with
+that weather. Missing values appear as `--` or `--:--`. Coordinates are kept only
+in memory; the face does not start GPS or a separate heart-rate sensor session,
+make network requests or run a background service.
 In low-power mode, the display updates once per minute.
-Seconds, metric icons and solar labels are hidden until the face wakes;
-metric values and progress arcs remain visible.
+Seconds, metric icons, progress arcs and solar labels are hidden until the face
+wakes; metric values remain visible.
 
 ## Customize
 
 On the watch, hold **UP/MENU → Watch Face → Garmin Face → START → Customize**.
-Choose the three fields, accent colour, light background, simple view and seconds
-style. Select **None** to hide a field; remaining fields centre automatically.
+Choose the three fields, accent colour, light background and simple view.
+Select **None** to hide a field; remaining fields centre automatically.
 Settings persist across restarts.
 
 Holding a metric field is intended to open its native Garmin view. Touch must be
@@ -74,5 +80,5 @@ Settings** opens customization; **Set Position** and **Set Weather** provide tes
    (`brew install libmtp`). Close other MTP clients before transferring.
 3. Disconnect the watch and select **Garmin Face** in the watch-face menu.
 
-Further details: [power audit](docs/power-audit.md) and
+Further details: [power audit](docs/power-audit-2026-11-01.md) and
 [Garmin icon sources](resources/drawables/garmin/SOURCES.md).

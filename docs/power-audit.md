@@ -1,5 +1,9 @@
 # Audyt energetyczny — aktualizacja 2026-10-30
 
+Aktualizacja 2026-11-01: usunięto analogowy sekundnik i jego ustawienie. Bieżąca
+tarcza obsługuje wyłącznie sekundy cyfrowe. Opisy i pomiary obu rodzajów
+sekundnika poniżej dokumentują wcześniejsze wersje.
+
 Przejrzano wszystkie moduły `source/`, testy, zasoby, manifest i skrypty budowania.
 Zachowano wygląd aktywnej tarczy; sekundnik jest teraz ukrywany w spoczynku.
 Wydanie `0.1.3` obejmuje opisane optymalizacje oraz ukrywanie sekundnika w spoczynku.

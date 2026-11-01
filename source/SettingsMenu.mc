@@ -17,9 +17,6 @@ class FaceSettingsMenu extends WatchUi.Menu2 {
         addItem(new WatchUi.ToggleMenuItem(Rez.Strings.LightBackgroundLabel,
             {:enabled => Rez.Strings.EnabledLabel, :disabled => Rez.Strings.DisabledLabel},
             FaceOptions.LIGHT_BACKGROUND_KEY, FaceOptions.lightBackground(), null));
-        addItem(new WatchUi.ToggleMenuItem(Rez.Strings.AnalogSecondsLabel,
-            {:enabled => Rez.Strings.EnabledLabel, :disabled => Rez.Strings.DisabledLabel},
-            FaceOptions.ANALOG_SECONDS_KEY, FaceOptions.analogSeconds(), null));
     }
 }
 
@@ -29,10 +26,6 @@ class FaceSettingsDelegate extends WatchUi.Menu2InputDelegate {
     function onSelect(item as WatchUi.MenuItem) as Void {
         if (item instanceof WatchUi.ToggleMenuItem && item.getId().equals(FaceOptions.KEY)) {
             FaceOptions.saveSimpleView(item.isEnabled());
-            return;
-        }
-        if (item instanceof WatchUi.ToggleMenuItem && item.getId().equals(FaceOptions.ANALOG_SECONDS_KEY)) {
-            FaceOptions.saveAnalogSeconds(item.isEnabled());
             return;
         }
         if (item instanceof WatchUi.ToggleMenuItem && item.getId().equals(FaceOptions.LIGHT_BACKGROUND_KEY)) {
