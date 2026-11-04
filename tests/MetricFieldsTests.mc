@@ -142,3 +142,33 @@ function independentMetricsWorkWithoutActivityAndDependenciesFollowSettings(logg
     TestStorage.restore(keys, previous);
     return true;
 }
+
+(:test)
+function repeatedMetricSourcesFollowEditsHiddenFieldsAndReload(logger as Test.Logger) as Lang.Boolean {
+    var keys = [MetricFields.key(0), MetricFields.key(1), MetricFields.key(2)];
+    var previous = [Storage.getValue(keys[0]), Storage.getValue(keys[1]), Storage.getValue(keys[2])];
+    try {
+        MetricFields.save(0, MetricFields.HEART_RATE);
+        MetricFields.save(1, MetricFields.BATTERY);
+        MetricFields.save(2, MetricFields.HEART_RATE);
+        Test.assertEqual(MetricFields.firstSlot(2), 0);
+        // Hiding the earlier occurrence must make the remaining field independent.
+        MetricFields.save(0, MetricFields.NONE);
+        Test.assertEqual(MetricFields.firstSlot(2), 2);
+        MetricFields.save(2, MetricFields.BATTERY);
+        Test.assertEqual(MetricFields.firstSlot(2), 1);
+        MetricFields.load();
+        Test.assertEqual(MetricFields.firstSlot(2), 1);
+        MetricFields.save(0, MetricFields.BATTERY);
+        Test.assertEqual(MetricFields.firstSlot(1), 0);
+        Test.assertEqual(MetricFields.firstSlot(2), 0);
+        MetricFields.save(1, MetricFields.STEPS);
+        Test.assertEqual(MetricFields.firstSlot(1), 1);
+        Test.assertEqual(MetricFields.firstSlot(2), 0);
+    } catch (ex) {
+        TestStorage.restore(keys, previous);
+        throw ex;
+    }
+    TestStorage.restore(keys, previous);
+    return true;
+}

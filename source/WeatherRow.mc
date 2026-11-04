@@ -1,10 +1,9 @@
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Math;
-import Toybox.Position;
 import Toybox.Weather;
 
-// Current and feels-like temperatures from the same cached weather reading.
+// Current temperature from Garmin's cached weather reading.
 module WeatherRow {
     const MAX_ROW_WIDTH = 220;
     const WEATHER_WIDTH = 38; // 14 px gap and 24 px icon/spacing.
@@ -14,8 +13,7 @@ module WeatherRow {
     var _temperatureWidth as Lang.Number = 0;
     var _stamp as Lang.Number = -1;
     var _condition as Lang.Number or Null = null;
-    var _location as Position.Location or Null = null;
-    var _currentTemperature as Lang.String = "--°/--°";
+    var _currentTemperature as Lang.String = "--°";
     var _font as Graphics.FontType = Graphics.FONT_GLANCE;
     var _compactFont as Graphics.FontType or Null = null;
 
@@ -25,14 +23,9 @@ module WeatherRow {
         if (_stamp == stamp) { return; }
         _stamp = stamp;
         var conditions = Weather.getCurrentConditions();
-        _currentTemperature = conditions == null ? temperaturesText(null, null)
-            : temperaturesText(conditions.temperature, conditions.feelsLikeTemperature);
+        _currentTemperature = temperatureText(conditions == null ? null : conditions.temperature);
         _condition = conditions == null ? null : conditions.condition;
-        _location = conditions == null ? null : conditions.observationLocationPosition;
     }
-
-    // Use Garmin's cached weather location only; never request a GPS fix.
-    function location() as Position.Location or Null { return _location; }
 
     function draw(dc as Graphics.Dc, centerX as Lang.Number, y as Lang.Number,
                   dateText as Lang.String) as Void {
@@ -57,7 +50,7 @@ module WeatherRow {
         }
         var font = _font;
         var gap = 14;
-        var rowLeft = centerX - (_dateWidth + gap + 24 + _temperatureWidth) / 2;
+        var rowLeft = centerX - (_dateWidth + WEATHER_WIDTH + _temperatureWidth) / 2;
         dc.setColor(FaceColors.secondary(), FaceColors.background());
         dc.drawText(rowLeft, y, font, dateText,
             Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
@@ -72,11 +65,6 @@ module WeatherRow {
             return "--°";
         }
         return Math.round(value).toNumber().toString() + "°";
-    }
-
-    function temperaturesText(temperature as Lang.Numeric or Null,
-                              feelsLike as Lang.Numeric or Null) as Lang.String {
-        return temperatureText(temperature) + "/" + temperatureText(feelsLike);
     }
 
     function drawIcon(dc as Graphics.Dc, x as Lang.Number,

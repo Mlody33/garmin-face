@@ -1,12 +1,112 @@
 import Toybox.Application.Storage;
+import Toybox.ActivityMonitor;
 import Toybox.Graphics;
 import Toybox.Lang;
 import Toybox.Test;
+import Toybox.Time;
 
 (:test)
 class SleepTestView extends GarminFaceView {
     function initialize() { GarminFaceView.initialize(); }
     function lastDrawnSecond() as Lang.Number { return _lastSecond; }
+    function metricsUpdatedAt() as Lang.Number { return _metricsUpdatedAt; }
+    function partialAt(dc as Graphics.Dc, now as Lang.Number) as Void {
+        refreshSleepingFields(dc, now);
+    }
+}
+
+(:test)
+class ChangingMetricTestView extends SleepTestView {
+    var stress as Lang.Number or Null = 7;
+    var samples as Lang.Number = 0;
+
+    function initialize() { SleepTestView.initialize(); }
+    function fieldText(slot as Lang.Number) as Lang.String { return _values[slot]; }
+    protected function metricValue(metric as Lang.String, activity as ActivityMonitor.Info or Null)
+            as Lang.Number or Lang.Float or Null {
+        samples += 1;
+        return metric.equals(MetricFields.STRESS) ? stress : 2000;
+    }
+}
+
+(:test)
+function sleepingMetricsShareSourcesRetainUpdatesAndRejectStaleLayout(logger as Test.Logger) as Lang.Boolean {
+    var keys = [MetricFields.key(0), MetricFields.key(1), MetricFields.key(2), FaceOptions.LIGHT_BACKGROUND_KEY];
+    var previous = [];
+    for (var i = 0; i < keys.size(); i += 1) { previous.add(Storage.getValue(keys[i])); }
+    try {
+        MetricFields.save(0, MetricFields.STRESS);
+        MetricFields.save(1, MetricFields.CALORIES);
+        MetricFields.save(2, MetricFields.STRESS);
+        var bitmap = Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap;
+        var dc = bitmap.getDc();
+        for (var light = 0; light < 2; light += 1) {
+            FaceOptions.saveLightBackground(light == 1);
+            var view = new ChangingMetricTestView();
+            view.onEnterSleep();
+            view.onUpdate(dc);
+            Test.assertEqual(view.samples, 2);
+            var start = view.metricsUpdatedAt();
+            var renders = view.renderCount();
+            view.stress = 100; // Grow a one-digit reading into three digits.
+            view.partialAt(dc, start + 3);
+            Test.assertEqual(view.samples, 4);
+            Test.assertEqual(view.fieldText(0), "100");
+            Test.assertEqual(view.fieldText(2), "100");
+            Test.assertEqual(view.renderCount(), renders);
+            view.stress = null; // Erase the wider reading and show missing data.
+            view.partialAt(dc, start + 6);
+            Test.assertEqual(view.fieldText(0), "--");
+            Test.assertEqual(view.fieldText(2), "--");
+            view.onUpdate(dc);
+            Test.assertEqual(view.renderCount(), renders); // Scene already contains the updated values.
+            var samples = view.samples;
+            MetricFields.save(0, MetricFields.NONE);
+            view.partialAt(dc, start + 9);
+            Test.assertEqual(view.samples, samples); // No painting against an outdated layout.
+            view.onUpdate(dc);
+            Test.assertEqual(view.renderCount(), renders + 1);
+            MetricFields.save(0, MetricFields.STRESS);
+        }
+    } catch (ex) {
+        TestStorage.restore(keys, previous);
+        throw ex;
+    }
+    TestStorage.restore(keys, previous);
+    return true;
+}
+
+(:test)
+function sleepingMetricsPollEveryThreeSecondsWithoutFullRenders(logger as Test.Logger) as Lang.Boolean {
+    var bitmap = Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap;
+    var dc = bitmap.getDc();
+    var view = new SleepTestView();
+    view.onEnterSleep();
+    view.partialAt(dc, Time.now().value()); // No scene exists yet.
+    Test.assertEqual(view.metricsUpdatedAt(), -1);
+    view.onUpdate(dc);
+    var start = view.metricsUpdatedAt();
+    var renders = view.renderCount();
+    view.partialAt(dc, start + 1);
+    view.partialAt(dc, start + 2);
+    Test.assertEqual(view.metricsUpdatedAt(), start);
+    view.partialAt(dc, start + 3);
+    Test.assertEqual(view.metricsUpdatedAt(), start + 3);
+    view.partialAt(dc, start + 5);
+    Test.assertEqual(view.metricsUpdatedAt(), start + 3);
+    view.partialAt(dc, start + 6);
+    Test.assertEqual(view.metricsUpdatedAt(), start + 6);
+    Test.assertEqual(view.renderCount(), renders);
+    Test.assertEqual(view.lastDrawnSecond(), -1);
+    view.onShow(); // Do not reuse a scene invalidated by an overlay/settings.
+    view.partialAt(dc, start + 9);
+    Test.assertEqual(view.metricsUpdatedAt(), start + 6);
+    view.onUpdate(dc);
+    view.onExitSleep();
+    start = view.metricsUpdatedAt();
+    view.partialAt(dc, start + 3);
+    Test.assertEqual(view.metricsUpdatedAt(), start);
+    return true;
 }
 
 (:test)

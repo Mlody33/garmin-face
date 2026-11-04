@@ -8,13 +8,16 @@ or later. Includes English and Polish translations.
 
 - 24-hour time with digital seconds. Seconds appear only while
   the face is awake and disappear in low-power mode.
-- Date, actual/feels-like temperatures in °C (e.g. `8°/5°`), weather conditions,
+- Date, current temperature in °C (e.g. `8°`), weather conditions,
   alarm status and phone connection status.
 - Three configurable fields: steps, calories, stress, heart rate, battery,
   daily distance in kilometres or floors climbed. Fields can be repeated or hidden.
+  In low-power mode, fields check for new cached readings every three seconds;
+  only changed values are repainted. Measurement frequency remains controlled by Garmin.
 - Progress arcs for daily steps, weekly intensity minutes and the current day
   or night. After sunset, the top arc tracks the night until the next sunrise.
-  Solar labels show each endpoint and its change in minutes from the previous day.
+  A centered solar label shows the next sunrise or sunset, with its change in
+  minutes from the previous day's matching event in parentheses.
   Each event time rounds up to the next whole minute, matching the checked native
   Garmin readings. Day-to-day changes compare these displayed times.
   Each bottom goal arc turns green when its target is reached.

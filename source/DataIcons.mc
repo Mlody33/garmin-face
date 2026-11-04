@@ -5,6 +5,7 @@ import Toybox.WatchUi;
 // All lower-field icons are ready-made Garmin Support assets.
 module DataIcons {
     var _icons as Lang.Dictionary<Lang.String, WatchUi.BitmapResource> = {};
+    var _tintOptions as {:tintColor as Lang.Number} = {:tintColor => Graphics.COLOR_DK_GRAY};
 
     function drawMetricIcon(dc as Graphics.Dc, x as Lang.Number, y as Lang.Number,
                             metric as Lang.String) as Void {
@@ -18,7 +19,8 @@ module DataIcons {
         var left = x - icon.getWidth() / 2;
         var top = y - icon.getHeight() / 2;
         if (FaceOptions.lightBackground()) {
-            dc.drawBitmap2(left, top, icon, {:tintColor => FaceColors.secondary()});
+            _tintOptions[:tintColor] = FaceColors.secondary();
+            dc.drawBitmap2(left, top, icon, _tintOptions);
         } else {
             dc.drawBitmap(left, top, icon);
         }

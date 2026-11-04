@@ -127,7 +127,7 @@ module SolarTimes {
         if (timestamp == null || _location == null) { return text; }
         var change = changeMinutes(timestamp, sunrise, _events, _location as Position.Location);
         if (change == null) { return text; }
-        return text + " " + (change >= 0 ? "+" : "") + change.toString();
+        return text + " (" + (change >= 0 ? "+" : "") + change.toString() + ")";
     }
 
     function progress(now as Lang.Number, interval as [Lang.Number, Lang.Number, Lang.Boolean] or Null) as Lang.Float or Null {

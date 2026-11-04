@@ -2,9 +2,7 @@ import Toybox.Lang;
 
 // Geometry for the only supported device: round FR955, 260 x 260.
 module FaceLayout {
-    const STATUS_Y = 23;
     const SUN_Y = 45;
-    const SUN_OFFSET_X = 55;
     const CENTER_X = 130;
     const CENTER_Y = 130;
     const DATA_ROW_GAP = 52;

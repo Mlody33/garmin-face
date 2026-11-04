@@ -15,17 +15,21 @@ module DigitalSeconds {
     function prepare(dc as Graphics.Dc, font as Graphics.FontType,
                      background as Lang.Number, foreground as Lang.Number) as Void {
         if (_font == font && _background == background && _foreground == foreground) { return; }
+        var fontChanged = _font != font;
         _font = font;
         _background = background;
         _foreground = foreground;
-        _height = dc.getFontHeight(font) + 4;
-        _digitWidth = dc.getTextWidthInPixels("0", font);
-        _canRasterize = true;
-        for (var digit = 0; digit < 10; digit += 1) {
-            if (dc.getTextWidthInPixels(digit.toString(), font) != _digitWidth) { _canRasterize = false; }
-        }
-        for (var second = 0; second < 60; second += 1) {
-            if (dc.getTextWidthInPixels(second.format("%02d"), font) != 2 * _digitWidth) { _canRasterize = false; }
+        // Colours change the pixels, but not the font's dimensions or spacing.
+        if (fontChanged) {
+            _height = dc.getFontHeight(font) + 4;
+            _digitWidth = dc.getTextWidthInPixels("0", font);
+            _canRasterize = true;
+            for (var digit = 0; digit < 10; digit += 1) {
+                if (dc.getTextWidthInPixels(digit.toString(), font) != _digitWidth) { _canRasterize = false; }
+            }
+            for (var second = 0; second < 60; second += 1) {
+                if (dc.getTextWidthInPixels(second.format("%02d"), font) != 2 * _digitWidth) { _canRasterize = false; }
+            }
         }
         if (!_canRasterize) {
             if (_text.size() == 0) {
@@ -34,7 +38,7 @@ module DigitalSeconds {
             _digits = [];
             return;
         }
-        _text = [];
+        if (_text.size() != 0) { _text = []; }
         for (var digit = 0; digit < 10; digit += 1) {
             if (_digits.size() <= digit) {
                 _digits.add(Graphics.createBufferedBitmap({:width => _digitWidth, :height => _height}).get() as Graphics.BufferedBitmap);

@@ -17,7 +17,9 @@ module MetricFields {
 
     var _fields as Lang.Array<Lang.String> = [STEPS, CALORIES, STRESS];
     var _visibleSlots as Lang.Array<Lang.Number> = [0, 1, 2];
+    var _firstSlots as Lang.Array<Lang.Number> = [0, 1, 2];
     var _heartRateId as Complications.Id or Null = null;
+    var _revision as Lang.Number = 0;
     var _needsActivity as Lang.Boolean = true;
 
     function choices() as Lang.Array<Lang.String> {
@@ -62,11 +64,21 @@ module MetricFields {
         return _visibleSlots;
     }
 
+    function firstSlot(slot as Lang.Number) as Lang.Number { return _firstSlots[slot]; }
+
+    function revision() as Lang.Number { return _revision; }
+
     function updateVisibleSlots() as Void {
+        _revision += 1;
         _visibleSlots = [];
         _needsActivity = false;
         for (var slot = 0; slot < FaceLayout.FIELD_COUNT; slot += 1) {
             var metric = _fields[slot];
+            // The configuration changes rarely; resolve shared readings here.
+            _firstSlots[slot] = slot;
+            for (var prior = 0; prior < slot; prior += 1) {
+                if (_fields[prior].equals(metric)) { _firstSlots[slot] = prior; break; }
+            }
             if (!metric.equals(NONE)) {
                 _visibleSlots.add(slot);
                 if (!metric.equals(BATTERY) && !metric.equals(HEART_RATE)) { _needsActivity = true; }

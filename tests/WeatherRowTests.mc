@@ -3,13 +3,11 @@ import Toybox.Lang;
 import Toybox.Test;
 
 (:test)
-function weatherTemperaturesRoundAndHandleMissingReadingsIndependently(logger as Test.Logger) as Lang.Boolean {
-    Test.assertEqual(WeatherRow.temperaturesText(8.2, 4.8), "8°/5°");
-    Test.assertEqual(WeatherRow.temperaturesText(-3.2, -6.8), "-3°/-7°");
-    Test.assertEqual(WeatherRow.temperaturesText(0, 0), "0°/0°");
-    Test.assertEqual(WeatherRow.temperaturesText(8, null), "8°/--°");
-    Test.assertEqual(WeatherRow.temperaturesText(null, -2), "--°/-2°");
-    Test.assertEqual(WeatherRow.temperaturesText(null, null), "--°/--°");
+function weatherTemperatureRoundsAndHandlesMissingReading(logger as Test.Logger) as Lang.Boolean {
+    Test.assertEqual(WeatherRow.temperatureText(8.2), "8°");
+    Test.assertEqual(WeatherRow.temperatureText(-6.8), "-7°");
+    Test.assertEqual(WeatherRow.temperatureText(0), "0°");
+    Test.assertEqual(WeatherRow.temperatureText(null), "--°");
     return true;
 }
 
@@ -20,7 +18,7 @@ function weatherRowFitsLongDatesAndNegativeTemperatures(logger as Test.Logger) a
     var saved = WeatherRow._currentTemperature;
     try {
         var dates = ["Wed, 30 Sep", "Śr, 30 Paź", "Sun, 1 Nov"];
-        var temperatures = ["-40°/-50°", "--°/--°", "8°/5°"];
+        var temperatures = ["-40°", "--°", "8°"];
         for (var d = 0; d < dates.size(); d += 1) {
             for (var t = 0; t < temperatures.size(); t += 1) {
                 WeatherRow._currentTemperature = temperatures[t];
@@ -30,7 +28,7 @@ function weatherRowFitsLongDatesAndNegativeTemperatures(logger as Test.Logger) a
             }
         }
         // A short row should return to the original font after a compact row.
-        WeatherRow._currentTemperature = "8°/5°";
+        WeatherRow._currentTemperature = "8°";
         WeatherRow.draw(dc, 130, FaceLayout.DATE_Y, "Su, 1 Nov");
         Test.assertEqual(WeatherRow._font, FaceFonts.text());
     } catch (ex) {
