@@ -140,8 +140,8 @@ function solarNativeApiReturnsDatedNextDaySunrise(logger as Test.Logger) as Lang
     Test.assertEqual(current[1], tomorrowRise.value());
     Test.assertEqual(SolarTimes.eventText(current[0]), "16:17");
     Test.assertEqual(SolarTimes.eventText(current[1]), "06:26");
-    Test.assertEqual(SolarTimes.eventLabel(current[0], false), "16:17 (-2)");
-    Test.assertEqual(SolarTimes.eventLabel(current[1], true), "06:26 (+2)");
+    Test.assertEqual(SolarTimes.eventLabel(current[0], false), "16:17 -2");
+    Test.assertEqual(SolarTimes.eventLabel(current[1], true), "06:26 +2");
     logger.debug("DATED SOLAR: today rise=" + todayRise.value() + " tomorrow rise=" + tomorrowRise.value());
     logger.debug("SUNSET signed seconds change=" + sunsetChangeSeconds);
     return true;
@@ -272,14 +272,14 @@ function solarNativeReferenceMatchesAllThreeDaysAndNightComparison(logger as Tes
         for (var i = 0; i < events.size(); i += 1) {
             Test.assertEqual(SolarTimes.eventText(events[i][0]), expected[i]);
         }
-        Test.assertEqual(SolarTimes.eventLabel(riseToday, true), "06:28 (+2)");
-        Test.assertEqual(SolarTimes.eventLabel(setToday, false), "16:18 (-1)");
-        Test.assertEqual(SolarTimes.eventLabel(riseTomorrow, true), "06:30 (+2)");
-        Test.assertEqual(SolarTimes.eventLabel(setTomorrow, false), "16:16 (-2)");
+        Test.assertEqual(SolarTimes.eventLabel(riseToday, true), "06:28 +2");
+        Test.assertEqual(SolarTimes.eventLabel(setToday, false), "16:18 -1");
+        Test.assertEqual(SolarTimes.eventLabel(riseTomorrow, true), "06:30 +2");
+        Test.assertEqual(SolarTimes.eventLabel(setTomorrow, false), "16:16 -2");
         var night = SolarTimes.intervalAt(setToday + 600, events);
         Test.assert(night != null && !night[2]);
-        Test.assertEqual(SolarTimes.eventLabel(night[0], false), "16:18 (-1)");
-        Test.assertEqual(SolarTimes.eventLabel(night[1], true), "06:30 (+2)");
+        Test.assertEqual(SolarTimes.eventLabel(night[0], false), "16:18 -1");
+        Test.assertEqual(SolarTimes.eventLabel(night[1], true), "06:30 +2");
         Test.assertEqual(SolarTimes.previousEvent(night[0], false, events,
             SolarTimes._location as Position.Location), setYesterday);
         Test.assertEqual(SolarTimes.previousEvent(night[1], true, events,
@@ -409,8 +409,8 @@ function solarRetainedDeviceFixFeedsCorrectDatedEvents(logger as Test.Logger) as
         Test.assertEqual(interval[2], selected[2]);
         // The simulator currently exposes no live fix: check the retained-position path.
         if (latest == null) {
-            Test.assertEqual(SolarTimes.eventLabel(interval[0], true), "06:24 (+2)");
-            Test.assertEqual(SolarTimes.eventLabel(interval[1], false), "16:17 (-2)");
+            Test.assertEqual(SolarTimes.eventLabel(interval[0], true), "06:24 +2");
+            Test.assertEqual(SolarTimes.eventLabel(interval[1], false), "16:17 -2");
         }
     } catch (ex) {
         SolarPosition._last = saved;

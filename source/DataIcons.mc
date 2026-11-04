@@ -6,6 +6,22 @@ import Toybox.WatchUi;
 module DataIcons {
     var _icons as Lang.Dictionary<Lang.String, WatchUi.BitmapResource> = {};
     var _tintOptions as {:tintColor as Lang.Number} = {:tintColor => Graphics.COLOR_DK_GRAY};
+    var _solarIcon as WatchUi.BitmapResource or Null = null;
+
+    function drawSolarIcon(dc as Graphics.Dc, x as Lang.Number, y as Lang.Number) as Void {
+        if (_solarIcon == null) {
+            _solarIcon = WatchUi.loadResource(Rez.Drawables.SunriseSunsetIcon) as WatchUi.BitmapResource;
+        }
+        var icon = _solarIcon as WatchUi.BitmapResource;
+        var left = x - icon.getWidth() / 2;
+        var top = y - icon.getHeight() / 2;
+        if (FaceOptions.lightBackground()) {
+            _tintOptions[:tintColor] = FaceColors.secondary();
+            dc.drawBitmap2(left, top, icon, _tintOptions);
+        } else {
+            dc.drawBitmap(left, top, icon);
+        }
+    }
 
     function drawMetricIcon(dc as Graphics.Dc, x as Lang.Number, y as Lang.Number,
                             metric as Lang.String) as Void {

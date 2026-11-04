@@ -28,3 +28,11 @@ dziennego dystansu. Zmienia się tylko ikona; odczyt nadal pochodzi z dziennego
 
 To zasoby graficzne z Garmin Support, nie ikony udostępnione bezpośrednio przez
 Connect IQ SDK. `Complication.getIcon()` zwraca `null` dla natywnych pól systemowych.
+
+## Wschód i zachód słońca
+
+Gotowy wspólny symbol Garmin „Sunrise & Sunset” z [instrukcji Venu X1](https://www8.garmin.com/manuals/webhelp/GUID-C144B465-A0C8-4FE9-AFE6-41A3FE3F1D9A/EN-US/GUID-6CA02868-A131-4F6E-BEED-D89FC04DE048.html).
+
+- [Oryginalny SVG](https://www8.garmin.com/manuals/webhelp/GUID-C144B465-A0C8-4FE9-AFE6-41A3FE3F1D9A/Shared/GUID-E5D1DB09-0F11-4699-A1EF-DCCEE9A40CE3-high.svg) → `sunrise_sunset.original.svg`.
+- `sunrise_sunset.svg` zachowuje geometrię oryginału, dodając szare wypełnienie. Kompilator skaluje go do około 26 × 18 px.
+- To jeden symbol dla obu zdarzeń; nie zawiera osobnych strzałek wschodu i zachodu.

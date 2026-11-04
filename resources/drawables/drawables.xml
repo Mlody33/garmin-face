@@ -1,4 +1,5 @@
 <drawables>
+    <bitmap id="SunriseSunsetIcon" filename="garmin/sunrise_sunset.svg" scaleX="25%" scaleY="25%" scaleRelativeTo="image" dithering="none"/>
     <bitmap id="LauncherIcon" filename="launcher_icon.png"/>
     <bitmap id="StepsIcon" filename="garmin/steps.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>
     <bitmap id="CaloriesIcon" filename="garmin/calories.svg" scaleX="27.7778%" scaleY="27.7778%" scaleRelativeTo="image" dithering="none"/>

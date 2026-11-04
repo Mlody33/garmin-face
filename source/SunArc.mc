@@ -40,12 +40,13 @@ module SunArc {
         }
         _revision = revision;
         if (_font == null) {
-            _font = Graphics.getVectorFont({:face => "RobotoCondensedRegular", :size => 21});
+            _font = Graphics.getVectorFont({:face => "RobotoCondensedRegular", :size => 23});
             if (_font == null) { _font = Graphics.FONT_XTINY; }
         }
         dc.setColor(FaceColors.secondary(), FaceColors.background());
-        var font = _font as Graphics.FontType;
-        dc.drawText(FaceLayout.CENTER_X, FaceLayout.SUN_Y, font, _endText,
+        if (interval != null) { DataIcons.drawSolarIcon(dc, FaceLayout.CENTER_X, FaceLayout.SUN_ICON_Y); }
+        dc.drawText(FaceLayout.CENTER_X, FaceLayout.SUN_Y, _font as Graphics.FontType, _endText,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
+
 }
