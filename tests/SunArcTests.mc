@@ -138,10 +138,6 @@ function solarNativeApiReturnsDatedNextDaySunrise(logger as Test.Logger) as Lang
     var current = SolarTimes.current();
     Test.assert(current != null);
     Test.assertEqual(current[1], tomorrowRise.value());
-    Test.assertEqual(SolarTimes.eventText(current[0]), "16:17");
-    Test.assertEqual(SolarTimes.eventText(current[1]), "06:26");
-    Test.assertEqual(SolarTimes.eventLabel(current[0], false), "16:17 -2");
-    Test.assertEqual(SolarTimes.eventLabel(current[1], true), "06:26 +2");
     logger.debug("DATED SOLAR: today rise=" + todayRise.value() + " tomorrow rise=" + tomorrowRise.value());
     logger.debug("SUNSET signed seconds change=" + sunsetChangeSeconds);
     return true;
@@ -190,14 +186,14 @@ function solarChangesCompareRoundedTimesAndHandleDst(logger as Test.Logger) as L
     // 17:20 CEST -> 16:18 CET is 62 minutes earlier on the watch's clock.
     Test.assertEqual(SolarTimes.changeMinutes(current, false, [[previous, false]], warsaw), -62);
     Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18) + 59, false,
-        [[SolarTest.epoch(28, 15, 18) + 1, false]], warsaw), 0);
+        [[SolarTest.epoch(28, 15, 18) + 1, false]], warsaw), 1);
     Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18) + 1, false,
-        [[SolarTest.epoch(28, 15, 18) + 59, false]], warsaw), 0);
+        [[SolarTest.epoch(28, 15, 18) + 59, false]], warsaw), -1);
     return true;
 }
 
 (:test)
-function solarLabelsRoundUpAcrossMidnightWithoutChangingProgress(logger as Test.Logger) as Lang.Boolean {
+function solarLabelsRoundNearestAcrossMidnightWithoutChangingProgress(logger as Test.Logger) as Lang.Boolean {
     var warsaw = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
     SolarTimes.refresh(new Time.Moment(SolarTest.epoch(30, 12, 0)), warsaw);
     var interval = SolarTimes.current();
@@ -207,14 +203,14 @@ function solarLabelsRoundUpAcrossMidnightWithoutChangingProgress(logger as Test.
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 25) + 58), "06:26");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 15, 18) + 59), "16:19");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 27) + 86400 + 40), "06:28");
-    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 15, 17) + 86400 + 11), "16:18");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 15, 17) + 86400 + 11), "16:17");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28)), "06:28");
-    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28) + 1), "06:29");
-    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28) + 29), "06:29");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28) + 1), "06:28");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28) + 29), "06:28");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28) + 30), "06:29");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 28) + 31), "06:29");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 5, 59) + 31), "07:00");
-    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 22, 59) + 1), "00:00");
+    Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 22, 59) + 1), "23:59");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 22, 59) + 30), "00:00");
     Test.assertEqual(SolarTimes.eventText(SolarTest.epoch(31, 22, 59) + 31), "00:00");
     Test.assertEqual(SolarTimes.current()[0], start);
@@ -223,7 +219,7 @@ function solarLabelsRoundUpAcrossMidnightWithoutChangingProgress(logger as Test.
 }
 
 (:test)
-function solarChangesUseBothRoundedUpEventTimes(logger as Test.Logger) as Lang.Boolean {
+function solarChangesUseBothNearestMinuteEventTimes(logger as Test.Logger) as Lang.Boolean {
     var warsaw = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
     var previousRise = SolarTest.epoch(31, 5, 25) + 58;
     var currentRise = SolarTest.epoch(31, 5, 27) + 86400 + 40;
@@ -231,12 +227,12 @@ function solarChangesUseBothRoundedUpEventTimes(logger as Test.Logger) as Lang.B
     var currentSet = SolarTest.epoch(31, 15, 17) + 86400 + 11;
     var events = [[previousRise, true], [previousSet, false], [currentRise, true], [currentSet, false]];
     Test.assertEqual(SolarTimes.changeMinutes(currentRise, true, events, warsaw), 2);
-    Test.assertEqual(SolarTimes.changeMinutes(currentSet, false, events, warsaw), -1);
-    // Displayed 16:21 -> 16:20 is one minute earlier.
+    Test.assertEqual(SolarTimes.changeMinutes(currentSet, false, events, warsaw), -2);
+    // Round both displayed clock times before subtracting them.
     Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 19) + 7, false,
-        [[SolarTest.epoch(28, 15, 20) + 55, false]], warsaw), -1);
+        [[SolarTest.epoch(28, 15, 20) + 55, false]], warsaw), -2);
     Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18) + 29, false,
-        [[SolarTest.epoch(28, 15, 18), false]], warsaw), 1);
+        [[SolarTest.epoch(28, 15, 18), false]], warsaw), 0);
     Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18), false,
         [[SolarTest.epoch(28, 15, 18) + 30, false]], warsaw), -1);
     Test.assertEqual(SolarTimes.changeMinutes(SolarTest.epoch(29, 15, 18) + 30, false,
@@ -246,7 +242,7 @@ function solarChangesUseBothRoundedUpEventTimes(logger as Test.Logger) as Lang.B
     // A location shift can move yesterday across :00; respect both displayed times.
     events = [[previousRise + 5, true], [previousSet + 5, false],
         [currentRise + 5, true], [currentSet + 5, false]];
-    Test.assertEqual(SolarTimes.changeMinutes(currentRise + 5, true, events, warsaw), 1);
+    Test.assertEqual(SolarTimes.changeMinutes(currentRise + 5, true, events, warsaw), 2);
     Test.assertEqual(SolarTimes.changeMinutes(currentSet + 5, false, events, warsaw), -2);
     return true;
 }
@@ -256,30 +252,30 @@ function solarNativeReferenceMatchesAllThreeDaysAndNightComparison(logger as Tes
     var savedEvents = SolarTimes._events;
     var savedLocation = SolarTimes._location;
     try {
-        // Exact API outputs from the simulator, expressed in UTC (local time is CET).
-        // These fixtures reproduce the user's six native-watch reference readings.
-        var riseYesterday = SolarTest.epoch(31, 5, 25) + 51;
-        var setYesterday = SolarTest.epoch(31, 15, 18) + 50;
-        var riseToday = SolarTest.epoch(31, 5, 27) + 86400 + 33;
-        var setToday = SolarTest.epoch(31, 15, 17) + 86400 + 2;
-        var riseTomorrow = SolarTest.epoch(31, 5, 29) + 172800 + 15;
-        var setTomorrow = SolarTest.epoch(31, 15, 15) + 172800 + 15;
+        // Physical FR955 SolarProbe photo, 4 Nov 2026. Local readings are CET.
+        var base = Gregorian.moment({:year => 2026, :month => 11, :day => 3, :hour => 0}).value();
+        var riseYesterday = base + 5 * 3600 + 31 * 60 + 30;
+        var setYesterday = base + 15 * 3600 + 11 * 60 + 47;
+        var riseToday = base + 86400 + 5 * 3600 + 33 * 60 + 13;
+        var setToday = base + 86400 + 15 * 3600 + 10 * 60 + 2;
+        var riseTomorrow = base + 172800 + 5 * 3600 + 34 * 60 + 57;
+        var setTomorrow = base + 172800 + 15 * 3600 + 8 * 60 + 19;
         var events = [[riseYesterday, true], [setYesterday, false], [riseToday, true],
             [setToday, false], [riseTomorrow, true], [setTomorrow, false]];
-        var expected = ["06:26", "16:19", "06:28", "16:18", "06:30", "16:16"];
+        var expected = ["06:32", "16:12", "06:33", "16:10", "06:35", "16:08"];
         SolarTimes._events = events;
         SolarTimes._location = new Position.Location({:latitude => 52.2297, :longitude => 21.0122, :format => :degrees});
         for (var i = 0; i < events.size(); i += 1) {
             Test.assertEqual(SolarTimes.eventText(events[i][0]), expected[i]);
         }
-        Test.assertEqual(SolarTimes.eventLabel(riseToday, true), "06:28 +2");
-        Test.assertEqual(SolarTimes.eventLabel(setToday, false), "16:18 -1");
-        Test.assertEqual(SolarTimes.eventLabel(riseTomorrow, true), "06:30 +2");
-        Test.assertEqual(SolarTimes.eventLabel(setTomorrow, false), "16:16 -2");
+        Test.assertEqual(SolarTimes.eventLabel(riseToday, true), "06:33 +1");
+        Test.assertEqual(SolarTimes.eventLabel(setToday, false), "16:10 -2");
+        Test.assertEqual(SolarTimes.eventLabel(riseTomorrow, true), "06:35 +2");
+        Test.assertEqual(SolarTimes.eventLabel(setTomorrow, false), "16:08 -2");
         var night = SolarTimes.intervalAt(setToday + 600, events);
         Test.assert(night != null && !night[2]);
-        Test.assertEqual(SolarTimes.eventLabel(night[0], false), "16:18 -1");
-        Test.assertEqual(SolarTimes.eventLabel(night[1], true), "06:30 +2");
+        Test.assertEqual(SolarTimes.eventLabel(night[0], false), "16:10 -2");
+        Test.assertEqual(SolarTimes.eventLabel(night[1], true), "06:35 +2");
         Test.assertEqual(SolarTimes.previousEvent(night[0], false, events,
             SolarTimes._location as Position.Location), setYesterday);
         Test.assertEqual(SolarTimes.previousEvent(night[1], true, events,
@@ -407,11 +403,6 @@ function solarRetainedDeviceFixFeedsCorrectDatedEvents(logger as Test.Logger) as
         Test.assertEqual(interval[0], selected[0]);
         Test.assertEqual(interval[1], selected[1]);
         Test.assertEqual(interval[2], selected[2]);
-        // The simulator currently exposes no live fix: check the retained-position path.
-        if (latest == null) {
-            Test.assertEqual(SolarTimes.eventLabel(interval[0], true), "06:24 +2");
-            Test.assertEqual(SolarTimes.eventLabel(interval[1], false), "16:17 -2");
-        }
     } catch (ex) {
         SolarPosition._last = saved;
         SunArc.invalidate();

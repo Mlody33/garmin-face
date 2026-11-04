@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <iq:manifest xmlns:iq="http://www.garmin.com/xml/connectiq" version="3">
-    <iq:application id="c9210bbfa9ae46228d4db2c8761a738f" type="watchface" name="@Strings.AppName" entry="GarminFaceApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="4.2.2" version="0.3.4">
+    <iq:application id="c9210bbfa9ae46228d4db2c8761a738f" type="watchface" name="@Strings.AppName" entry="GarminFaceApp" launcherIcon="@Drawables.LauncherIcon" minApiLevel="4.2.2" version="0.3.5">
         <iq:products>
             <iq:product id="fr955"/>
         </iq:products>

@@ -18,7 +18,7 @@ or later. Includes English and Polish translations.
   or night. After sunset, the top arc tracks the night until the next sunrise.
   A centered solar label shows the next sunrise or sunset, with its change in
   minutes from the previous day's matching event.
-  Each event time rounds up to the next whole minute, matching the checked native
+  Each event time rounds to the nearest minute (30 seconds rounds up), matching the checked native
   Garmin readings. Day-to-day changes compare these displayed times.
   Each bottom goal arc turns green when its target is reached.
 - Accent colours, a light background and a simple view that hides the arcs

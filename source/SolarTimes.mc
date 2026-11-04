@@ -86,7 +86,7 @@ module SolarTimes {
 
     function roundedEvent(timestamp as Lang.Number) as Time.Moment {
         var remainder = timestamp % 60;
-        return new Time.Moment(remainder == 0 ? timestamp : timestamp + 60 - remainder);
+        return new Time.Moment(timestamp - remainder + (remainder >= 30 ? 60 : 0));
     }
 
     function localMinute(timestamp as Lang.Number, location as Position.Location) as Lang.Number {
@@ -109,7 +109,7 @@ module SolarTimes {
         return null;
     }
 
-    // Compare both displayed times after rounding each event up to a whole minute.
+    // Compare both displayed times after rounding each event to the nearest minute.
     // The previous event may belong to yesterday or two days ago for a night interval.
     function changeMinutes(timestamp as Lang.Number, sunrise as Lang.Boolean,
             events as Lang.Array<[Lang.Number, Lang.Boolean]>, location as Position.Location) as Lang.Number or Null {
@@ -137,7 +137,7 @@ module SolarTimes {
 
     function eventText(timestamp as Lang.Number or Null) as Lang.String {
         if (timestamp == null) { return "--:--"; }
-        // Round labels up; exact timestamps still drive progress and date selection.
+        // Round labels to the nearest minute; exact timestamps still drive progress and date selection.
         var event = roundedEvent(timestamp);
         var local = _location == null ? null : Gregorian.localMoment(_location as Position.Location, event);
         var info = local == null ? Gregorian.info(event, Time.FORMAT_SHORT) : Gregorian.info(local, Time.FORMAT_SHORT);
