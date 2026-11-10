@@ -1,5 +1,6 @@
 import Toybox.Graphics;
 import Toybox.Lang;
+import Toybox.Math;
 
 module ProgressArc {
     const SWEEP = 72;
@@ -7,6 +8,35 @@ module ProgressArc {
     const EDGE_INSET = 6;
     // Keep the same radial thickness and a two-pixel gap for all goal arcs.
     const ACTIVE_MINUTES_INSET = STROKE_WIDTH + 2;
+    // A small rectangle sits on the arc at the historical value.
+    // The underlying track and fill retain current data.
+    function drawHistoryMarker(dc as Graphics.Dc, progress as Lang.Float or Null, inset as Lang.Number) as Void {
+        if (progress == null || FaceOptions.simpleView()) { return; }
+        var angle = (234 + sweep(progress)) * Math.PI / 180.0;
+        var ux = Math.cos(angle);
+        var uy = -Math.sin(angle);
+        var x = dc.getWidth() / 2;
+        var y = dc.getHeight() / 2;
+        var radius = x - EDGE_INSET - inset;
+        var cx = x + radius * ux;
+        var cy = y + radius * uy;
+        // Cover the complete stroke, including its anti-aliased edges.
+        var halfHeight = (STROKE_WIDTH + 2) / 2.0;
+        var halfWidth = 1.5;
+        dc.setAntiAlias(true);
+        dc.setColor(FaceColors.background(), FaceColors.background());
+        dc.fillPolygon([
+            [Math.round(cx - halfHeight * ux - halfWidth * uy).toNumber(),
+                Math.round(cy - halfHeight * uy + halfWidth * ux).toNumber()],
+            [Math.round(cx + halfHeight * ux - halfWidth * uy).toNumber(),
+                Math.round(cy + halfHeight * uy + halfWidth * ux).toNumber()],
+            [Math.round(cx + halfHeight * ux + halfWidth * uy).toNumber(),
+                Math.round(cy + halfHeight * uy - halfWidth * ux).toNumber()],
+            [Math.round(cx - halfHeight * ux + halfWidth * uy).toNumber(),
+                Math.round(cy - halfHeight * uy - halfWidth * ux).toNumber()]
+        ]);
+        dc.setAntiAlias(false);
+    }
 
     function goalProgress(value as Lang.Number or Null, goal as Lang.Number or Null) as Lang.Float or Null {
         if (value == null || value < 0 || goal == null || goal <= 0) { return null; }

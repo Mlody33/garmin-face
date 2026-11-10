@@ -39,6 +39,8 @@ class GarminFaceView extends WatchUi.WatchFace {
     private var _readings as Lang.Array<Lang.Number or Lang.Float or Null> = [null, null, null];
     protected var _values as Lang.Array<Lang.String> = ["--", "--", "--"];
     private var _stepSweep as Lang.Number = -1;
+    private var _historyStepSweep as Lang.Number = -1;
+    private var _historyMinutesSweep as Lang.Number = -1;
     private var _activeMinutesSweep as Lang.Number = -1;
     private var _sunSweep as Lang.Number = -1;
     private var _sunDaylight as Lang.Boolean or Null = null;
@@ -69,6 +71,7 @@ class GarminFaceView extends WatchUi.WatchFace {
         _minuteStamp = -1;
         WeatherRow.invalidate();
         SunArc.invalidate();
+        GoalHistory.invalidate();
     }
 
     function onPartialUpdate(dc as Graphics.Dc) as Void {
@@ -152,16 +155,26 @@ class GarminFaceView extends WatchUi.WatchFace {
         _metricsUpdatedAt = now.value();
         var stepProgress = null;
         var activeMinutesProgress = null;
+        var historySteps = null;
+        var historyMinutes = null;
         var sunProgress = null;
         var sunDaylight = null;
         if (showArcs) {
+            GoalHistory.refresh(now, settings.firstDayOfWeek);
             if (activity != null) {
                 stepProgress = ProgressArc.goalProgress(activity.steps, activity.stepGoal);
+                historySteps = ProgressArc.goalProgress(GoalHistory.steps, activity.stepGoal);
+                historyMinutes = ProgressArc.goalProgress(GoalHistory.minutes, activity.activeMinutesWeekGoal);
                 var minutes = activity.activeMinutesWeek;
                 // Garmin's total already includes twice the vigorous minutes.
                 activeMinutesProgress = ProgressArc.goalProgress(
                     minutes == null ? null : minutes.total, activity.activeMinutesWeekGoal);
             }
+            var historyStepSweep = historySteps == null ? -1 : ProgressArc.sweep(historySteps);
+            var historyMinutesSweep = historyMinutes == null ? -1 : ProgressArc.sweep(historyMinutes);
+            if (_historyStepSweep != historyStepSweep || _historyMinutesSweep != historyMinutesSweep) { dirty = true; }
+            _historyStepSweep = historyStepSweep;
+            _historyMinutesSweep = historyMinutesSweep;
             SunArc.refresh(now);
             sunProgress = SunArc.currentProgress(now.value());
             sunDaylight = SunArc.currentDaylight();
@@ -198,6 +211,8 @@ class GarminFaceView extends WatchUi.WatchFace {
                 ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, stepProgress, 0, true);
                 ProgressArc.draw(target, 234, Graphics.ARC_COUNTER_CLOCKWISE, activeMinutesProgress,
                     ProgressArc.ACTIVE_MINUTES_INSET, true);
+                ProgressArc.drawHistoryMarker(target, historySteps, 0);
+                ProgressArc.drawHistoryMarker(target, historyMinutes, ProgressArc.ACTIVE_MINUTES_INSET);
             }
             _minuteStamp = stamp;
             _frameSleeping = _sleeping;

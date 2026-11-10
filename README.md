@@ -21,6 +21,11 @@ or later. Includes English and Polish translations.
   Each event time rounds to the nearest minute (30 seconds rounds up), matching the checked native
   Garmin readings. Day-to-day changes compare these displayed times.
   Each bottom goal arc turns green when its target is reached.
+  Small rectangles on the arcs mark yesterday's steps and the previous calendar week's intensity
+  minutes against the current goals. The arc fills continue to show today and this
+  week. Week boundaries follow the watch settings.
+  Missing history is left unmarked; a local cache retains completed days because
+  Garmin exposes at most seven days of activity history.
 - Accent colours, a light background and a simple view that hides the arcs
   and solar labels.
 
