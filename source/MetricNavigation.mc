@@ -31,8 +31,17 @@ module MetricNavigation {
 }
 
 class GarminFaceDelegate extends WatchUi.WatchFaceDelegate {
-    function initialize() {
+    private var _view as GarminFaceView;
+
+    function initialize(view as GarminFaceView) {
         WatchFaceDelegate.initialize();
+        _view = view;
+    }
+
+    function onPowerBudgetExceeded(powerInfo as WatchUi.WatchFacePowerInfo) as Void {
+        _view.disablePartialUpdates();
+        System.println("Partial updates paused: execution=" + powerInfo.executionTimeAverage
+            + " limit=" + powerInfo.executionTimeLimit);
     }
 
     function onPress(event as WatchUi.ClickEvent) as Lang.Boolean {

@@ -46,7 +46,10 @@ class GarminFaceView extends WatchUi.WatchFace {
     private var _sunDaylight as Lang.Boolean or Null = null;
     protected var _metricsUpdatedAt as Lang.Number = -1;
     private var _metricsRevision as Lang.Number = -1;
-    private var _valueWidths as Lang.Array<Lang.Number> = [0, 0, 0];
+    private var _valueWidths as Lang.Array<Lang.Number> = [-1, -1, -1];
+    private var _paintedWidths as Lang.Array<Lang.Number> = [0, 0, 0];
+    private var _sampledAt as Lang.Array<Lang.Number> = [-1, -1, -1];
+    private var _partialUpdatesEnabled as Lang.Boolean = true;
     private var _fieldTop as Lang.Number = 0;
     private var _fieldHeight as Lang.Number = 0;
 
@@ -63,8 +66,13 @@ class GarminFaceView extends WatchUi.WatchFace {
 
     function onExitSleep() as Void {
         _sleeping = false;
+        _partialUpdatesEnabled = true;
         WatchUi.requestUpdate();
     }
+
+    // The next full minute update restores the screen even if Garmin rejected
+    // the last partial transfer. Retry partial updates after the next wake.
+    function disablePartialUpdates() as Void { _partialUpdatesEnabled = false; }
 
     function onShow() as Void {
         // Settings, notifications or another view may have covered the display.
@@ -81,22 +89,38 @@ class GarminFaceView extends WatchUi.WatchFace {
     // Only the values row is changed. Keep the cached scene in sync so a later
     // full repaint cannot restore older readings over a partial update.
     protected function refreshSleepingFields(dc as Graphics.Dc, now as Lang.Number) as Void {
-        if (!_sleeping || !_frameSleeping || _frame == null || _minuteStamp < 0
+        if (!_partialUpdatesEnabled || !_sleeping || !_frameSleeping || _frame == null || _minuteStamp < 0
             || _metricsRevision != MetricFields.revision() || now - _metricsUpdatedAt < 3) { return; }
         _metricsUpdatedAt = now;
         var slots = MetricFields.visibleSlots();
         if (slots.size() == 0) { return; }
-        var activity = MetricFields.needsActivity() ? ActivityMonitor.getInfo() : null;
-        var changed = refreshMetrics(activity);
+        var due = 0;
+        for (var index = 0; index < slots.size(); index += 1) {
+            var slot = slots[index];
+            if (MetricFields.firstSlot(slot) == slot
+                && now - _sampledAt[slot] >= MetricFields.sleepInterval(_fields[slot])) {
+                due |= 1 << slot;
+            }
+        }
+        if (due == 0) { return; }
+        var activity = (due & MetricFields.activitySlots()) != 0 ? ActivityMonitor.getInfo() : null;
+        var changed = refreshMetrics(activity, now, due);
         if (changed == 0) { return; }
+        repaintFields(slots, changed, dc);
+    }
+
+    // Patch only the values row in the reusable scene. Full updates still copy
+    // the complete scene to the screen; sleep updates copy the clipped row.
+    private function repaintFields(slots as Lang.Array<Lang.Number>, changed as Lang.Number,
+                                   screen as Graphics.Dc or Null) as Void {
         var target = (_frame as Graphics.BufferedBitmap).getDc();
         var left = 260;
         var right = 0;
         for (var index = 0; index < slots.size(); index += 1) {
             var slot = slots[index];
             if ((changed & (1 << slot)) == 0) { continue; }
-            var width = target.getTextWidthInPixels(_values[slot], FaceFonts.text());
-            var extent = (width > _valueWidths[slot] ? width : _valueWidths[slot]) / 2 + 2;
+            var width = valueWidth(target, slot);
+            var extent = (width > _paintedWidths[slot] ? width : _paintedWidths[slot]) / 2 + 2;
             var x = FaceLayout.fieldX(index, slots.size());
             if (x - extent < left) { left = x - extent; }
             if (x + extent > right) { right = x + extent; }
@@ -106,11 +130,14 @@ class GarminFaceView extends WatchUi.WatchFace {
         target.setClip(left, _fieldTop, right - left, _fieldHeight);
         target.setColor(_background, _background);
         target.fillRectangle(left, _fieldTop, right - left, _fieldHeight);
-        drawFields(target, slots, false);
+        // Preserve any icon edge intersecting the row's padded clipping region.
+        drawFields(target, slots, !_sleeping);
         target.clearClip();
-        dc.setClip(left, _fieldTop, right - left, _fieldHeight);
-        dc.drawBitmap(0, 0, _frame as Graphics.BufferedBitmap);
-        dc.clearClip();
+        if (screen != null) {
+            screen.setClip(left, _fieldTop, right - left, _fieldHeight);
+            screen.drawBitmap(0, 0, _frame as Graphics.BufferedBitmap);
+            screen.clearClip();
+        }
     }
 
     function onUpdate(dc as Graphics.Dc) as Void {
@@ -151,7 +178,8 @@ class GarminFaceView extends WatchUi.WatchFace {
 
         var slots = MetricFields.visibleSlots();
         var activity = showArcs || MetricFields.needsActivity() ? ActivityMonitor.getInfo() : null;
-        if (refreshMetrics(activity) != 0) { dirty = true; }
+        if (_metricsRevision != MetricFields.revision()) { dirty = true; }
+        var changed = refreshMetrics(activity, now.value(), 7);
         _metricsUpdatedAt = now.value();
         var stepProgress = null;
         var activeMinutesProgress = null;
@@ -217,6 +245,8 @@ class GarminFaceView extends WatchUi.WatchFace {
             _minuteStamp = stamp;
             _frameSleeping = _sleeping;
             _renderCount += 1;
+        } else if (changed != 0) {
+            repaintFields(slots, changed, null);
         }
         if (!_sleeping) {
             DigitalSeconds.prepare(dc, _secondsFont as Graphics.FontType, _background, _secondary);
@@ -229,7 +259,8 @@ class GarminFaceView extends WatchUi.WatchFace {
     }
 
     // Share sampling, duplicate-field reuse and formatting between power modes.
-    private function refreshMetrics(activity as ActivityMonitor.Info or Null) as Lang.Number {
+    private function refreshMetrics(activity as ActivityMonitor.Info or Null,
+                                    now as Lang.Number, sources as Lang.Number) as Lang.Number {
         var configurationChanged = _metricsRevision != MetricFields.revision();
         var changedSlots = 0;
         for (var slot = 0; slot < FaceLayout.FIELD_COUNT; slot += 1) {
@@ -243,10 +274,15 @@ class GarminFaceView extends WatchUi.WatchFace {
             var metric = _fields[slot];
             if (metric.equals(MetricFields.NONE)) { continue; }
             var first = MetricFields.firstSlot(slot);
+            if ((sources & (1 << first)) == 0) { continue; }
             var reading = first < slot ? _readings[first] : metricValue(metric, activity);
+            _sampledAt[slot] = now;
             if (changed || reading != _readings[slot]) {
                 var text = first < slot ? _values[first] : MetricFields.formatValue(metric, reading);
-                if (!text.equals(_values[slot])) { changedSlots |= 1 << slot; }
+                if (!text.equals(_values[slot])) {
+                    changedSlots |= 1 << slot;
+                    _valueWidths[slot] = -1;
+                }
                 _values[slot] = text;
                 _readings[slot] = reading;
             }
@@ -267,8 +303,21 @@ class GarminFaceView extends WatchUi.WatchFace {
             var x = FaceLayout.fieldX(index, slots.size());
             if (icons) { DataIcons.drawMetricIcon(dc, x, FaceLayout.FIELD_ICON_Y, _fields[slot]); }
             drawCentered(dc, x, FaceLayout.FIELD_VALUE_Y, font, _values[slot], _secondary);
-            _valueWidths[slot] = dc.getTextWidthInPixels(_values[slot], font);
+            _paintedWidths[slot] = valueWidth(dc, slot);
         }
+    }
+
+    private function valueWidth(dc as Graphics.Dc, slot as Lang.Number) as Lang.Number {
+        if (_valueWidths[slot] < 0) {
+            var first = MetricFields.firstSlot(slot);
+            _valueWidths[slot] = first < slot ? valueWidth(dc, first)
+                : measureValueWidth(dc, _values[slot]);
+        }
+        return _valueWidths[slot];
+    }
+
+    protected function measureValueWidth(dc as Graphics.Dc, text as Lang.String) as Lang.Number {
+        return dc.getTextWidthInPixels(text, FaceFonts.text());
     }
 
     private function drawStatus(dc as Graphics.Dc) as Void {

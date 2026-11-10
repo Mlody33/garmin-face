@@ -13,7 +13,8 @@ class GarminFaceApp extends Application.AppBase {
         MetricFields.load();
         FaceColors.load();
         FaceOptions.load();
-        return [new GarminFaceView(), new GarminFaceDelegate()];
+        var view = new GarminFaceView();
+        return [view, new GarminFaceDelegate(view)];
     }
 
     function getSettingsView() as [WatchUi.Views] or [WatchUi.Views, WatchUi.InputDelegates] or Null {

@@ -19,9 +19,14 @@ class SleepTestView extends GarminFaceView {
 class ChangingMetricTestView extends SleepTestView {
     var stress as Lang.Number or Null = 7;
     var samples as Lang.Number = 0;
+    var widthMeasurements as Lang.Number = 0;
 
     function initialize() { SleepTestView.initialize(); }
     function fieldText(slot as Lang.Number) as Lang.String { return _values[slot]; }
+    protected function measureValueWidth(dc as Graphics.Dc, text as Lang.String) as Lang.Number {
+        widthMeasurements += 1;
+        return GarminFaceView.measureValueWidth(dc, text);
+    }
     protected function metricValue(metric as Lang.String, activity as ActivityMonitor.Info or Null)
             as Lang.Number or Lang.Float or Null {
         samples += 1;
@@ -50,7 +55,7 @@ function sleepingMetricsShareSourcesRetainUpdatesAndRejectStaleLayout(logger as 
             var renders = view.renderCount();
             view.stress = 100; // Grow a one-digit reading into three digits.
             view.partialAt(dc, start + 3);
-            Test.assertEqual(view.samples, 4);
+            Test.assertEqual(view.samples, 3); // Calories wait for the 60-second deadline.
             Test.assertEqual(view.fieldText(0), "100");
             Test.assertEqual(view.fieldText(2), "100");
             Test.assertEqual(view.renderCount(), renders);
@@ -155,6 +160,123 @@ function digitalSecondsDisappearInSleepAndReturnAfterWake(logger as Test.Logger)
                 Test.assert(view.lastDrawnSecond() >= 0);
             }
         }
+    } catch (ex) {
+        TestStorage.restore(keys, previous);
+        throw ex;
+    }
+    TestStorage.restore(keys, previous);
+    return true;
+}
+
+(:test)
+function activeMetricChangesReuseSceneAndWidthsAcrossThemes(logger as Test.Logger) as Lang.Boolean {
+    var keys = [MetricFields.key(0), MetricFields.key(1), MetricFields.key(2),
+        FaceOptions.KEY, FaceOptions.LIGHT_BACKGROUND_KEY];
+    var previous = [];
+    for (var i = 0; i < keys.size(); i += 1) { previous.add(Storage.getValue(keys[i])); }
+    try {
+        MetricFields.save(0, MetricFields.STRESS);
+        MetricFields.save(1, MetricFields.CALORIES);
+        MetricFields.save(2, MetricFields.STRESS);
+        FaceOptions.saveSimpleView(true);
+        var dc = (Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap).getDc();
+        for (var light = 0; light < 2; light += 1) {
+            FaceOptions.saveLightBackground(light == 1);
+            var view = new ChangingMetricTestView();
+            view.onUpdate(dc);
+            Test.assertEqual(view.widthMeasurements, 2); // Duplicate stress shares its width.
+            var renders = view.renderCount();
+            var minute = Time.now().value() / 60;
+            view.stress = 100;
+            view.onUpdate(dc);
+            Test.assertEqual(view.fieldText(0), "100");
+            Test.assertEqual(view.fieldText(2), "100");
+            Test.assertEqual(view.widthMeasurements, 3);
+            view.stress = null;
+            view.onUpdate(dc);
+            Test.assertEqual(view.fieldText(0), "--");
+            Test.assertEqual(view.widthMeasurements, 4);
+            if (Time.now().value() / 60 == minute) { Test.assertEqual(view.renderCount(), renders); }
+            view.onShow(); // Full restoration after an overlay remains mandatory.
+            renders = view.renderCount();
+            view.onUpdate(dc);
+            Test.assertEqual(view.renderCount(), renders + 1);
+            Test.assertEqual(view.widthMeasurements, 4);
+        }
+    } catch (ex) {
+        TestStorage.restore(keys, previous);
+        throw ex;
+    }
+    TestStorage.restore(keys, previous);
+    return true;
+}
+
+(:test)
+function sleepingMetricDeadlinesRespectFastSlowAndDuplicateSources(logger as Test.Logger) as Lang.Boolean {
+    var keys = [MetricFields.key(0), MetricFields.key(1), MetricFields.key(2)];
+    var previous = [Storage.getValue(keys[0]), Storage.getValue(keys[1]), Storage.getValue(keys[2])];
+    try {
+        var dc = (Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap).getDc();
+        var metrics = [MetricFields.STEPS, MetricFields.HEART_RATE, MetricFields.STRESS,
+            MetricFields.BATTERY, MetricFields.CALORIES, MetricFields.FLOORS, MetricFields.DISTANCE];
+        var intervals = [3, 3, 3, 60, 60, 60, 60];
+        for (var i = 0; i < metrics.size(); i += 1) {
+            MetricFields.save(0, metrics[i]);
+            MetricFields.save(1, MetricFields.NONE);
+            MetricFields.save(2, metrics[i]);
+            var view = new ChangingMetricTestView();
+            view.onEnterSleep();
+            view.onUpdate(dc);
+            Test.assertEqual(view.samples, 1);
+            var start = view.metricsUpdatedAt();
+            for (var second = 1; second < intervals[i]; second += 1) { view.partialAt(dc, start + second); }
+            Test.assertEqual(view.samples, 1);
+            view.partialAt(dc, start + intervals[i]);
+            Test.assertEqual(view.samples, 2);
+            view.onExitSleep();
+            view.onUpdate(dc);
+            Test.assertEqual(view.samples, 3); // Active updates always read fresh data.
+        }
+    } catch (ex) {
+        TestStorage.restore(keys, previous);
+        throw ex;
+    }
+    TestStorage.restore(keys, previous);
+    return true;
+}
+
+(:test)
+function partialBudgetFallbackKeepsMinuteUpdatesAndRecoversAfterWake(logger as Test.Logger) as Lang.Boolean {
+    var keys = [MetricFields.key(0), MetricFields.key(1), MetricFields.key(2)];
+    var previous = [Storage.getValue(keys[0]), Storage.getValue(keys[1]), Storage.getValue(keys[2])];
+    try {
+        MetricFields.save(0, MetricFields.STRESS);
+        MetricFields.save(1, MetricFields.NONE);
+        MetricFields.save(2, MetricFields.NONE);
+        var dc = (Graphics.createBufferedBitmap({:width => 260, :height => 260}).get() as Graphics.BufferedBitmap).getDc();
+        var view = new ChangingMetricTestView();
+        view.onEnterSleep();
+        view.onUpdate(dc);
+        var start = view.metricsUpdatedAt();
+        view.disablePartialUpdates();
+        view.stress = 100;
+        view.partialAt(dc, start + 3);
+        Test.assertEqual(view.samples, 1);
+        view.onShow();
+        view.onUpdate(dc);
+        Test.assertEqual(view.fieldText(0), "100");
+        Test.assertEqual(view.samples, 2);
+        view.partialAt(dc, view.metricsUpdatedAt() + 3);
+        Test.assertEqual(view.samples, 2); // Full updates must not clear the backoff.
+        view.onExitSleep();
+        view.onUpdate(dc);
+        view.onEnterSleep();
+        view.onUpdate(dc);
+        var samples = view.samples;
+        view.stress = 7;
+        view.partialAt(dc, view.metricsUpdatedAt() + 3);
+        Test.assertEqual(view.samples, samples + 1);
+        Test.assertEqual(view.fieldText(0), "7");
     } catch (ex) {
         TestStorage.restore(keys, previous);
         throw ex;

@@ -21,6 +21,7 @@ module MetricFields {
     var _heartRateId as Complications.Id or Null = null;
     var _revision as Lang.Number = 0;
     var _needsActivity as Lang.Boolean = true;
+    var _activitySlots as Lang.Number = 7;
 
     function choices() as Lang.Array<Lang.String> {
         return [STEPS, CALORIES, STRESS, HEART_RATE, BATTERY, DISTANCE, FLOORS, NONE];
@@ -72,6 +73,7 @@ module MetricFields {
         _revision += 1;
         _visibleSlots = [];
         _needsActivity = false;
+        _activitySlots = 0;
         for (var slot = 0; slot < FaceLayout.FIELD_COUNT; slot += 1) {
             var metric = _fields[slot];
             // The configuration changes rarely; resolve shared readings here.
@@ -81,12 +83,26 @@ module MetricFields {
             }
             if (!metric.equals(NONE)) {
                 _visibleSlots.add(slot);
-                if (!metric.equals(BATTERY) && !metric.equals(HEART_RATE)) { _needsActivity = true; }
+                if (!metric.equals(BATTERY) && !metric.equals(HEART_RATE)) {
+                    _needsActivity = true;
+                    _activitySlots |= 1 << slot;
+                }
             }
         }
     }
 
     function needsActivity() as Lang.Boolean { return _needsActivity; }
+
+    function activitySlots() as Lang.Number { return _activitySlots; }
+
+    function sleepInterval(metric as Lang.String) as Lang.Number {
+        switch (metric) {
+            case STEPS:
+            case HEART_RATE:
+            case STRESS: return 3;
+        }
+        return 60;
+    }
 
     function label(metric as Lang.String) as Lang.String {
         var resource = Rez.Strings.StepsLabel;
